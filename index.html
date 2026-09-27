@@ -22,6 +22,8 @@
   body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
   .pantalla{display:none;min-height:100vh;}
   .pantalla.activa{display:block;}
+  #pantalla-quiz{height:100vh;height:100dvh;overflow:hidden;}
+  #pantalla-quiz.activa{display:flex;flex-direction:column;}
   h1{font-size:1.45rem;margin:0 0 4px;text-align:center;}
   h2{font-size:1rem;color:var(--accent);margin:18px 0 8px;text-align:left;}
   .sub{color:var(--sub);font-size:.86rem;text-align:center;margin:0 0 18px;}
@@ -72,25 +74,26 @@
   .aviso{color:#f87171 !important;font-weight:600;}
 
   /* ---- Examen ---- */
-  .cabecera{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;
-    background:var(--card);padding:12px 14px;position:sticky;top:0;z-index:5;}
+  .cabecera{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;
+    background:var(--card);padding:8px 12px;position:sticky;top:0;z-index:5;}
   #q-progreso{font-weight:700;font-size:1rem;}
   #q-puntos{font-weight:700;color:var(--ok);margin-left:auto;}
   #q-timer{font-weight:700;font-size:.95rem;}
   .badge{font-size:.72rem;font-weight:700;padding:2px 7px;border-radius:6px;color:#0d0d14;}
-  .cuerpo{max-width:620px;margin:0 auto;padding:20px 16px 40px;}
-  #q-pregunta{font-size:1.12rem;font-weight:700;margin:0 0 18px;}
+  .cuerpo{flex:1;overflow-y:auto;width:100%;max-width:620px;margin:0 auto;padding:12px 16px 14px;}
+  #q-pregunta{font-size:1.08rem;font-weight:700;margin:0 0 10px;}
   .opcion{display:block;width:100%;text-align:left;background:var(--card);color:var(--text);
-    border:1.5px solid var(--b,#4a4a66);border-radius:12px;padding:14px 15px;
-    font-size:.98rem;margin-bottom:10px;cursor:pointer;line-height:1.4;}
+    border:1.5px solid var(--b,#4a4a66);border-radius:12px;padding:10px 12px;
+    font-size:.95rem;margin-bottom:8px;cursor:pointer;line-height:1.4;}
   .opcion:active{background:var(--card2);}
   .opcion.ok{background:var(--ok);border-color:var(--ok);color:#0d0d14;font-weight:700;}
   .opcion.bad{background:var(--bad);border-color:var(--bad);color:#fff;font-weight:700;}
   .opcion:disabled{cursor:default;}
-  #q-feedback{font-size:1.08rem;margin:14px 0 0;white-space:pre-wrap;}
-  #btn-siguiente{display:block;margin-left:auto;margin-top:16px;background:var(--accent);
+  #q-feedback{font-size:1rem;margin:8px 0 0;white-space:pre-wrap;}
+  #btn-siguiente{display:block;margin-left:auto;margin-top:10px;background:var(--accent);
     color:#fff;border:none;border-radius:11px;font-size:1rem;font-weight:700;
-    padding:12px 22px;cursor:pointer;}
+    padding:10px 18px;cursor:pointer;position:sticky;bottom:0;
+    box-shadow:0 -4px 12px rgba(0,0,0,.35);}
   #btn-siguiente:disabled{opacity:.35;cursor:default;}
 
   /* ---- Resultados / estadísticas ---- */
@@ -120,24 +123,24 @@
   .vacio{color:var(--sub);font-size:.85rem;}
 
   /* ---- Marcas (Desafío / Olvido) ---- */
-  .fila-marcas{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px;}
+  .fila-marcas{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px;}
   #btn-desafio{background:var(--card2);color:var(--ambar);
-    border:1.5px solid var(--ambar);border-radius:11px;font-size:.92rem;font-weight:700;
-    padding:10px 16px;cursor:pointer;}
+    border:1.5px solid var(--ambar);border-radius:11px;font-size:.85rem;font-weight:700;
+    padding:7px 10px;cursor:pointer;}
   #btn-desafio.en-desafio{color:var(--ok);border-color:var(--ok);}
   #btn-olvido{background:var(--card2);color:#a78bfa;
-    border:1.5px solid #a78bfa;border-radius:11px;font-size:.92rem;font-weight:700;
-    padding:10px 16px;cursor:pointer;margin:12px 0 0;}
+    border:1.5px solid #a78bfa;border-radius:11px;font-size:.85rem;font-weight:700;
+    padding:7px 10px;cursor:pointer;margin:8px 0 0;}
   #btn-olvido.en-olvido{color:var(--bad);border-color:var(--bad);}
   #btn-leer{background:var(--card2);color:#4a9eff;
-    border:1.5px solid #4a9eff;border-radius:11px;font-size:.92rem;font-weight:700;
-    padding:10px 16px;cursor:pointer;}
+    border:1.5px solid #4a9eff;border-radius:11px;font-size:.85rem;font-weight:700;
+    padding:7px 10px;cursor:pointer;}
   #btn-masinfo{background:var(--card2);color:#34d399;
-    border:1.5px solid #34d399;border-radius:11px;font-size:.92rem;font-weight:700;
-    padding:10px 16px;cursor:pointer;margin:12px 0 0;}
+    border:1.5px solid #34d399;border-radius:11px;font-size:.85rem;font-weight:700;
+    padding:7px 10px;cursor:pointer;margin:8px 0 0;}
   #btn-masinfo.en-masinfo{color:var(--ok);border-color:var(--ok);}
-  #q-mas{font-size:1rem;margin:12px 0 0;white-space:pre-wrap;color:#34d399;
-    background:rgba(52,211,153,.08);border-radius:9px;padding:10px 12px;}
+  #q-mas{font-size:.95rem;margin:8px 0 0;white-space:pre-wrap;color:#34d399;
+    background:rgba(52,211,153,.08);border-radius:9px;padding:8px 10px;}
   .exp.ext{color:#34d399;border:1px solid rgba(52,211,153,.4);}
   .d-resumen{text-align:center;font-weight:700;font-size:.95rem;margin-bottom:14px;}
   .d-item{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px;
@@ -220,7 +223,7 @@
         <button class="peligro" id="btn-limpio">🧹 Modo limpio</button>
       </div>
       <p class="nota">Las preguntas se eligen al azar y las opciones se barajan en cada intento.</p>
-      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.9</span></p>
+      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.10</span></p>
     </div>
   </div>
 </section>
@@ -365,7 +368,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.9";
+const VERSION = "2.10";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -476,12 +479,12 @@ function actualizarBotonMarcas(){
   const bd = $("btn-desafio"), bo = $("btn-olvido");
   if(!bd || !bo || !q) return;
   if(enDesafio(q.pregunta)){
-    bd.textContent = "⭐ En Desafío (5×) — pulsar para quitar"; bd.classList.add("en-desafio");
+    bd.textContent = "⭐ En Desafío — quitar"; bd.classList.add("en-desafio");
   }else{
     bd.textContent = "⚔️ Marcar como Desafío (5×)"; bd.classList.remove("en-desafio");
   }
   if(enOlvido(q.pregunta)){
-    bo.textContent = "💤 En Olvido (no sale) — pulsar para quitar"; bo.classList.add("en-olvido");
+    bo.textContent = "💤 En Olvido — quitar"; bo.classList.add("en-olvido");
   }else{
     bo.textContent = "🧠 Marcar como Olvido (no sale)"; bo.classList.remove("en-olvido");
   }
@@ -583,10 +586,114 @@ function leer(texto, btn){
   u.onend = u.onerror = ()=>{ if(btn) btn.textContent = "🔊 Leer"; };
   speechSynthesis.speak(u);
 }
+function numeroAPalabras(n){
+  n = Math.trunc(n);
+  if(n < 0) return "menos "+numeroAPalabras(-n);
+  if(n === 0) return "cero";
+  const u = ["","uno","dos","tres","cuatro","cinco","seis","siete","ocho","nueve",
+             "diez","once","doce","trece","catorce","quince","dieciséis","diecisiete",
+             "dieciocho","diecinueve","veinte","veintiuno","veintidós","veintitrés",
+             "veinticuatro","veinticinco","veintiséis","veintisiete","veintiocho","veintinueve"];
+  if(n < 30) return u[n];
+  const dec = ["","","veinte","treinta","cuarenta","cincuenta","sesenta","setenta","ochenta","noventa"];
+  if(n < 100){
+    const d = Math.floor(n/10), r = n%10;
+    return r===0 ? dec[d] : dec[d]+" y "+u[r];
+  }
+  if(n < 1000){
+    const c = Math.floor(n/100), r = n%100;
+    const cent = c===1 ? (r===0?"cien":"ciento") :
+      (c===5?"quinientos":c===7?"setecientos":c===9?"novecientos":u[c]+"cientos");
+    return r===0 ? cent : cent+" "+numeroAPalabras(r);
+  }
+  if(n < 1000000){
+    const m = Math.floor(n/1000), r = n%1000;
+    const mil = m===1 ? "mil" : numeroAPalabras(m)+" mil";
+    return r===0 ? mil : mil+" "+numeroAPalabras(r);
+  }
+  return String(n);
+}
+function expandirTexto(t){
+  if(!t) return t;
+  let s = String(t);
+  // factorial solo tras número: 5! → "cinco factorial" (antes de convertir números)
+  s = s.replace(/(\d)\s*!/g, "$1 factorial");
+  // fracciones comunes: 1/2 → "un medio", 3/4 → "tres cuartos"...
+  const ord = {2:"medio",3:"tercio",4:"cuarto",5:"quinto",6:"sexto",7:"séptimo",
+               8:"octavo",9:"noveno",10:"décimo",100:"centésimo"};
+  s = s.replace(/(\d+)\s*\/\s*(\d+)/g, (m,n,d)=>{
+    const num = +n, den = +d;
+    if(ord[den] && num>=1 && num<=9){
+      const base = ord[den];
+      if(num===1) return "un "+base;
+      const plural = base==="tercio"?"tercios":base==="décimo"?"décimos":
+                     base==="centésimo"?"centésimos":base+"s";
+      return numeroAPalabras(num)+" "+plural;
+    }
+    return numeroAPalabras(num)+" entre "+numeroAPalabras(den);
+  });
+  // logaritmos y raíces con paréntesis
+  s = s.replace(/log₂\s*\(/g, "logaritmo en base dos de ");
+  s = s.replace(/log₁₀\s*\(/g, "logaritmo en base diez de ");
+  s = s.replace(/logₑ\s*\(/g, "logaritmo neperiano de ");
+  s = s.replace(/ln\s*\(/g, "logaritmo neperiano de ");
+  s = s.replace(/√\s*\(/g, "raíz cuadrada de ");
+  // valor absoluto |x|
+  s = s.replace(/\|([^|]+)\|/g, "valor absoluto de $1");
+  // números a palabras (incluye decimales y negativos); si va seguido de
+  // una letra (2x) se deja un espacio
+  const convNum = m=>{
+    const neg = m.startsWith("-");
+    const cuerpo = neg ? m.slice(1) : m;
+    let parte;
+    if(cuerpo.includes(".") || cuerpo.includes(",")){
+      const [ent, dec] = cuerpo.split(/[.,]/);
+      parte = numeroAPalabras(+ent||0)+" coma "+
+              dec.split("").map(d=>numeroAPalabras(+d)).join(" ");
+    }else{
+      parte = numeroAPalabras(+cuerpo);
+    }
+    return (neg?"menos ":"")+parte;
+  };
+  s = s.replace(/-?\d+(?:[.,]\d+)?(?=[A-Za-z])/g, m=>convNum(m)+" ");
+  s = s.replace(/-?\d+(?:[.,]\d+)?/g, convNum);
+  // división entre variables: x/2 → "x entre dos"
+  s = s.replace(/([A-Za-z])\s*\/\s*([A-Za-z0-9])/g, "$1 entre $2");
+  // símbolos y operadores (los largos primero), con espacios alrededor
+  const reemplazos = [
+    ["≤","menor o igual que"], ["≥","mayor o igual que"], ["≠","distinto de"],
+    ["≈","aproximadamente"], ["±","más menos"], ["×","por"], ["÷","entre"],
+    ["−","menos"], ["+","más"], ["=","igual a"], ["<","menor que"], [">","mayor que"],
+    ["%","por ciento"], ["°","grados"], ["²","al cuadrado"], ["³","al cubo"],
+    ["√","raíz cuadrada de "], ["π","pi"], ["∞","infinito"], ["→","flecha"],
+    ["⇒","implica"], ["∈","pertenece a"], ["∉","no pertenece a"], ["⊂","está contenido en"],
+    ["∪","unión"], ["∩","intersección"], ["∑","sumatorio"], ["∫","integral"],
+    ["Δ","delta"], ["λ","lambda"], ["α","alfa"], ["β","beta"], ["θ","theta"],
+    ["μ","mu"], ["σ","sigma"], ["Ω","omega"], ["ω","omega"], ["·","por"],
+    ["•","punto"], ["…","puntos suspensivos"], ["&","y"], ["|","barra vertical"],
+    ["\\","barra invertida"], ["_","guion bajo"], ["½","un medio"], ["⅓","un tercio"],
+    ["¼","un cuarto"], ["¾","tres cuartos"], ["⅔","dos tercios"], ["⅛","un octavo"],
+    ["(","paréntesis"], [")","cierra paréntesis"], ["[","corchete"],
+    ["]","cierra corchete"], ["{","llave"], ["}","cierra llave"],
+    ["/","barra"], ["€","euros"], ["$","dólares"]
+  ];
+  for(const [a,b] of reemplazos) s = s.split(a).join(" "+b+" ");
+  // superíndices y subíndices restantes
+  const sup = {"⁰":"cero","¹":"uno","²":"dos","³":"tres","⁴":"cuatro","⁵":"cinco",
+               "⁶":"seis","⁷":"siete","⁸":"ocho","⁹":"nueve"};
+  const sub = {"₀":"cero","₁":"uno","₂":"dos","₃":"tres","₄":"cuatro","₅":"cinco",
+               "₆":"seis","₇":"siete","₈":"ocho","₉":"nueve"};
+  s = s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, m=>" elevado a "+m.split("").map(c=>sup[c]).join(" "));
+  s = s.replace(/[₀₁₂₃₄₅₆₇₈₉]+/g, m=>" subíndice "+m.split("").map(c=>sub[c]).join(" "));
+  s = s.replace(/\s{2,}/g," ").trim();
+  return s;
+}
 function textoLeerPregunta(q, conExplicacion){
-  let t = q.pregunta+". Opciones: "+q.opciones.map((o,i)=>"Opción "+(i+1)+": "+o).join(". ")+".";
+  let t = expandirTexto(q.pregunta)+". Opciones: ";
+  t += q.opciones.map((o,i)=>"A B C D".split(" ")[i]+": "+expandirTexto(o)).join(". ")+".";
   if(conExplicacion){
-    t += " Respuesta correcta: "+q.opciones[q.correcta]+". "+q.explicacion;
+    t += " Respuesta correcta: "+"ABCD"[q.correcta]+": "+
+         expandirTexto(q.opciones[q.correcta])+". "+expandirTexto(q.explicacion);
   }
   return t;
 }
@@ -635,7 +742,7 @@ function actualizarBotonMasInfo(){
   const b = $("btn-masinfo");
   if(!b || !q) return;
   if(enMasInfo(q.pregunta)){
-    b.textContent = "✅ Marcada — pulsar para quitar";
+    b.textContent = "✅ Marcada — quitar";
     b.classList.add("en-masinfo");
   }else{
     b.textContent = "❓ Más explicación";
@@ -691,7 +798,7 @@ function pintarMasInfo(){
     const leerB = document.createElement("button"); leerB.className="secundario";
     leerB.textContent = "🔊 Leer";
     leerB.onclick = ()=>{
-      leer(textoLeerPregunta(q, true)+(q.ext?(" "+q.ext):""), leerB);
+      leer(textoLeerPregunta(q, true)+(q.ext?(" "+expandirTexto(q.ext)):""), leerB);
     };
     const quitar = document.createElement("button"); quitar.className="peligro";
     quitar.textContent = "Quitar";
@@ -943,7 +1050,12 @@ $("btn-olvido").onclick = ()=>{
 $("btn-leer").onclick = ()=>{
   const q = E.preguntas[E.actual];
   if(!q) return;
-  leer(textoLeerPregunta(q, E.respondidas.has(E.actual)), $("btn-leer"));
+  const total = E.preguntas.length;
+  const sub = (SUBTEMAS[q.tema] && SUBTEMAS[q.tema][q.subtema]) || q.subtema || "";
+  let ctx = "Pregunta "+(E.actual+1)+" de "+total+". "+TEMAS[q.tema]+". "+
+            NIVELES[q.nivel]+". Aciertos: "+E.aciertos+".";
+  if(sub) ctx += " "+sub+".";
+  leer(ctx+" "+textoLeerPregunta(q, E.respondidas.has(E.actual)), $("btn-leer"));
 };
 $("btn-masinfo").onclick = ()=>{
   const q = E.preguntas[E.actual];
