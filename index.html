@@ -217,9 +217,10 @@
         <button class="secundario" id="btn-olvidos">🧠 Olvido</button>
         <button class="secundario" id="btn-masinfo-menu">❓ Más explicación</button>
         <button class="secundario" id="btn-temario">📚 Temario</button>
+        <button class="peligro" id="btn-limpio">🧹 Modo limpio</button>
       </div>
       <p class="nota">Las preguntas se eligen al azar y las opciones se barajan en cada intento.</p>
-      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.8</span></p>
+      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.9</span></p>
     </div>
   </div>
 </section>
@@ -364,7 +365,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.8";
+const VERSION = "2.9";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -955,6 +956,25 @@ $("btn-borrar").onclick = ()=>{
     guardarEstadisticas({examenes:0,preguntas:0,aciertos:0,por_tema:{},por_nivel:{},
                          por_pregunta:{},mejor_pct:0,ultimos:[]});
     mostrarEstadisticas();
+  }
+};
+$("btn-limpio").onclick = ()=>{
+  const nDes = cargarDesafios().length, nOlv = cargarOlvido().length,
+        nMas = cargarMasInfo().length, nEx = cargarEstadisticas().examenes||0;
+  if(nDes===0 && nOlv===0 && nMas===0 && nEx===0){
+    alert("No hay nada que borrar: no tienes marcas ni estadísticas.");
+    return;
+  }
+  if(confirm("🧹 Modo limpio: se borrará TODO (marcas y estadísticas).\n\n"+
+             "· Desafíos: "+nDes+"\n· Olvido: "+nOlv+"\n· Más explicación: "+nMas+
+             "\n· Exámenes registrados: "+nEx+"\n\n¿Seguro?")){
+    guardarDesafios([]);
+    guardarOlvido([]);
+    guardarMasInfo([]);
+    guardarEstadisticas({examenes:0,preguntas:0,aciertos:0,por_tema:{},por_nivel:{},
+                         por_pregunta:{},mejor_pct:0,ultimos:[]});
+    actualizarContadorMenu();
+    alert("🧹 Todo limpio. Se han borrado las marcas y las estadísticas.");
   }
 };
 
