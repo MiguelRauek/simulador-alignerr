@@ -24,52 +24,51 @@
   .pantalla.activa{display:block;}
   #pantalla-quiz{height:100vh;height:100dvh;overflow:hidden;}
   #pantalla-quiz.activa{display:flex;flex-direction:column;}
-  h1{font-size:1.45rem;margin:0 0 4px;text-align:center;}
-  h2{font-size:1rem;color:var(--accent);margin:18px 0 8px;text-align:left;}
-  .sub{color:var(--sub);font-size:.86rem;text-align:center;margin:0 0 18px;}
+  h1{font-size:1.25rem;margin:0 0 2px;text-align:center;}
+  h2{font-size:1rem;color:var(--accent);margin:6px 0 3px;text-align:left;}
+  .sub{color:var(--sub);font-size:.82rem;text-align:center;margin:0 0 6px;}
 
   /* ---- Estructura ---- */
-  .caja{max-width:560px;margin:0 auto;padding:22px 16px 40px;}
-  .card{background:var(--card);border-radius:16px;padding:18px 16px;margin:0 auto;max-width:560px;
+  .caja{max-width:560px;margin:0 auto;padding:8px 16px 40px;}
+  .card{background:var(--card);border-radius:16px;padding:12px 12px;margin:0 auto;max-width:560px;
     box-shadow:0 2px 0 rgba(0,0,0,.25);}
-  .fila{display:flex;flex-wrap:wrap;gap:8px;}
-  .fila-botones{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px;}
+  .fila{display:flex;flex-wrap:wrap;gap:6px;}
+  .fila-botones{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
 
   /* ---- Rectángulos de color (materias / dificultad) ---- */
   .rect{border:1.5px solid var(--c);background:var(--card);color:var(--c);
-    font-weight:700;font-size:.95rem;padding:10px 14px;border-radius:11px;
+    font-weight:700;font-size:.9rem;padding:8px 12px;border-radius:11px;
     cursor:pointer;flex:1 1 auto;min-width:104px;text-align:center;transition:background .12s,color .12s;}
   .rect.sel{background:var(--c);color:#0d0d14;border-color:var(--c);}
   .rect:active{opacity:.85;}
 
   /* ---- Botones normales ---- */
   button{font-family:inherit;}
-  .primario{display:block;width:100%;margin-top:22px;background:var(--accent);color:#fff;
-    border:none;border-radius:12px;font-size:1.05rem;font-weight:700;padding:14px;cursor:pointer;}
+  .primario{display:block;width:100%;margin-top:8px;background:var(--accent);color:#fff;
+    border:none;border-radius:12px;font-size:1.05rem;font-weight:700;padding:10px;cursor:pointer;}
   .primario:active{background:var(--accent2);}
   .secundario{background:var(--card2);color:var(--text);border:none;border-radius:11px;
-    font-size:.95rem;padding:11px 20px;cursor:pointer;}
+    font-size:.9rem;padding:9px 16px;cursor:pointer;}
   .secundario:active{background:#33334a;}
   .peligro{background:var(--card2);color:var(--bad);border:none;border-radius:11px;
-    font-size:.95rem;padding:11px 20px;cursor:pointer;}
+    font-size:.9rem;padding:9px 16px;cursor:pointer;}
 
   /* ---- Número de preguntas ---- */
+  .num-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;}
+  .num-presets .rect{flex:1 1 auto;min-width:52px;padding:8px 10px;font-size:.9rem;}
   .num-fila{display:flex;align-items:center;gap:12px;}
-  input[type=range]{flex:1;-webkit-appearance:none;height:6px;border-radius:3px;
-    background:var(--card2);outline:none;}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;
-    border-radius:50%;background:var(--accent);cursor:pointer;border:3px solid var(--bg);}
-  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;
-    background:var(--accent);cursor:pointer;border:3px solid var(--bg);}
-  .num-val{font-weight:700;font-size:1.1rem;min-width:2.2rem;text-align:center;}
+  input[type=number]{flex:1;background:var(--card2);color:var(--text);
+    border:1.5px solid var(--accent);border-radius:11px;padding:8px 10px;
+    font-size:1.05rem;font-weight:700;text-align:center;min-width:0;}
+  .num-val{font-weight:700;font-size:.9rem;color:var(--sub);white-space:nowrap;}
 
   /* ---- Select temporizador ---- */
   select{width:100%;background:var(--card2);color:var(--text);border:1.5px solid var(--accent);
-    border-radius:11px;padding:12px;font-size:1rem;font-weight:600;cursor:pointer;}
-  .nota{color:var(--sub);font-size:.78rem;text-align:center;margin:18px 0 0;}
-  .contador{font-size:.8rem;color:var(--sub);background:rgba(255,255,255,.04);
-    border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px 12px;
-    margin-top:10px;line-height:1.55;}
+    border-radius:11px;padding:10px;font-size:1rem;font-weight:600;cursor:pointer;}
+  .nota{color:var(--sub);font-size:.78rem;text-align:center;margin:10px 0 0;}
+  .contador{font-size:.78rem;color:var(--sub);background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:5px 10px;
+    margin-top:6px;line-height:1.4;}
   .contador b{color:var(--text);}
   .aviso{color:#f87171 !important;font-weight:600;}
 
@@ -141,6 +140,8 @@
   #btn-masinfo.en-masinfo{color:var(--ok);border-color:var(--ok);}
   #q-mas{font-size:.95rem;margin:8px 0 0;white-space:pre-wrap;color:#34d399;
     background:rgba(52,211,153,.08);border-radius:9px;padding:8px 10px;}
+  #q-web,.web-res{font-size:.9rem;margin:8px 0 0;white-space:pre-wrap;color:#4a9eff;
+    background:rgba(74,158,255,.08);border-radius:9px;padding:8px 10px;}
   .exp.ext{color:#34d399;border:1px solid rgba(52,211,153,.4);}
   .d-resumen{text-align:center;font-weight:700;font-size:.95rem;margin-bottom:14px;}
   .d-item{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px;
@@ -193,10 +194,20 @@
       <div class="contador" id="contador-cat"></div>
 
       <h2>Número de preguntas</h2>
-      <div class="num-fila">
-        <input type="range" id="num" min="5" max="30" step="5" value="15">
-        <span class="num-val" id="num-val">15</span>
+      <div class="num-presets" id="num-presets">
+        <button class="rect" data-n="5" style="--c:#7c6cf0">5</button>
+        <button class="rect" data-n="10" style="--c:#7c6cf0">10</button>
+        <button class="rect" data-n="15" style="--c:#7c6cf0">15</button>
+        <button class="rect" data-n="20" style="--c:#7c6cf0">20</button>
+        <button class="rect" data-n="25" style="--c:#7c6cf0">25</button>
       </div>
+      <div class="num-fila">
+        <input type="number" id="num" min="1" max="200" value="5" inputmode="numeric">
+        <span class="num-val">preguntas</span>
+      </div>
+
+      <button class="primario" id="btn-comenzar">Comenzar examen</button>
+      <p class="nota" id="contador-disp"></p>
 
       <h2>Temporizador</h2>
       <select id="timer">
@@ -212,8 +223,6 @@
         <option>30 min total</option>
       </select>
 
-      <button class="primario" id="btn-comenzar">Comenzar examen</button>
-      <p class="nota" id="contador-disp"></p>
       <div class="fila-botones">
         <button class="secundario" id="btn-stats">Estadísticas</button>
         <button class="secundario" id="btn-desafios">⚔️ Desafíos</button>
@@ -223,7 +232,7 @@
         <button class="peligro" id="btn-limpio">🧹 Modo limpio</button>
       </div>
       <p class="nota">Las preguntas se eligen al azar y las opciones se barajan en cada intento.</p>
-      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.10</span></p>
+      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.11</span></p>
     </div>
   </div>
 </section>
@@ -249,6 +258,7 @@
     <p id="q-feedback"></p>
     <div id="q-mas"></div>
     <button id="btn-masinfo">❓ Más explicación</button>
+    <div id="q-web" style="display:none"></div>
     <button id="btn-siguiente" disabled>Siguiente →</button>
   </div>
 </section>
@@ -368,7 +378,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.10";
+const VERSION = "2.11";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -586,6 +596,82 @@ function leer(texto, btn){
   u.onend = u.onerror = ()=>{ if(btn) btn.textContent = "🔊 Leer"; };
   speechSynthesis.speak(u);
 }
+function leerNuevo(texto){
+  if(!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(texto);
+  u.lang = "es-ES"; u.rate = 1;
+  speechSynthesis.speak(u);
+}
+const MAPA_SUBTEMA = {
+  algoritmos:"algoritmo", aritmetica:"aritmética", bucles:"bucle (programación)",
+  combinatoria:"combinatoria", complejidad:"complejidad computacional",
+  complejos:"número complejo", condicionales:"estructura de control",
+  conjuntos:"conjunto", derivadas:"derivada", diccionarios:"tabla hash",
+  ecuaciones:"ecuación", errores:"error de programación", estadistica:"estadística",
+  estructuras:"estructura de datos", factorizacion:"factorización",
+  fracciones:"fracción", funciones:"función matemática", generadores:"generador (informática)",
+  geometria:"geometría", integradas:"función integrada", integrales:"integral",
+  limites:"límite matemático", listas:"lista (informática)", logaritmos:"logaritmo",
+  matrices:"matriz (matemática)", mcm_mcd:"mínimo común múltiplo",
+  modulos:"módulo (programación)", operadores:"operador (programación)",
+  patrones:"patrón de diseño", poo:"programación orientada a objetos",
+  porcentajes:"porcentaje", potencias:"potenciación", probabilidad:"probabilidad",
+  recursion:"recursión", referencias:"referencia (informática)", sets:"conjunto (informática)",
+  strings:"cadena de caracteres", sucesiones:"sucesión matemática",
+  tipos:"tipo de dato", trigonometria:"trigonometría", tuplas:"tupla"
+};
+function limpiarConsulta(t){
+  return String(t)
+    .replace(/[¿?¡!.,;:]/g," ")
+    .replace(/[=+\-×÷±≤≥≠≈√²³°%()\[\]{}|_]/g," ")
+    .replace(/\b[a-z]\b/g," ")
+    .replace(/\s+/g," ").trim();
+}
+function limpiarExtracto(t){
+  return String(t)
+    .replace(/<[^>]+>/g," ")
+    .replace(/\{\\displaystyle[^}]*\}/g," ")
+    .replace(/\{\\{[^}]*\}\}/g," ")
+    .replace(/\s+/g," ").trim();
+}
+async function buscarEnInternet(pregunta, zona, btn, subtema){
+  if(!zona) return;
+  zona.style.display = "";
+  zona.textContent = "🔎 Buscando en internet...";
+  if(btn) btn.disabled = true;
+  const ctrl = new AbortController();
+  const t = setTimeout(()=>ctrl.abort(), 12000);
+  try{
+    const term = (subtema && MAPA_SUBTEMA[subtema]) ? MAPA_SUBTEMA[subtema] :
+                 (subtema || limpiarConsulta(pregunta));
+    const url = "https://es.wikipedia.org/w/api.php?action=query&format=json&origin=*&list=search&srlimit=1&srsearch=" +
+                encodeURIComponent(term);
+    const r = await fetch(url, {signal: ctrl.signal});
+    if(!r.ok) throw 0;
+    const d = await r.json();
+    const hit = d.query && d.query.search && d.query.search[0];
+    if(!hit){
+      zona.textContent = "No he encontrado resultados para esta pregunta.";
+      return;
+    }
+    const url2 = "https://es.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=extracts&exintro=1&explaintext=1&titles=" +
+                 encodeURIComponent(hit.title);
+    const r2 = await fetch(url2, {signal: ctrl.signal});
+    const d2 = await r2.json();
+    const page = Object.values(d2.query.pages)[0];
+    const ext = limpiarExtracto((page && page.extract) || "");
+    const texto = "📖 Wikipedia: " + hit.title + ". " +
+                  ext.slice(0, 700) + (ext.length > 700 ? "…" : "");
+    zona.textContent = texto;
+    leerNuevo(expandirTexto(texto));
+  }catch(e){
+    zona.textContent = "⚠ No es posible buscar sin conexión a internet.";
+  }finally{
+    clearTimeout(t);
+    if(btn) btn.disabled = false;
+  }
+}
 function numeroAPalabras(n){
   n = Math.trunc(n);
   if(n < 0) return "menos "+numeroAPalabras(-n);
@@ -800,11 +886,15 @@ function pintarMasInfo(){
     leerB.onclick = ()=>{
       leer(textoLeerPregunta(q, true)+(q.ext?(" "+expandirTexto(q.ext)):""), leerB);
     };
+    const webB = document.createElement("button"); webB.className="secundario";
+    webB.textContent = "🔎 Buscar";
+    const webRes = document.createElement("div"); webRes.className="web-res"; webRes.style.display="none";
+    webB.onclick = ()=>{ buscarEnInternet(pregunta, webRes, webB, q.subtema); };
     const quitar = document.createElement("button"); quitar.className="peligro";
     quitar.textContent = "Quitar";
     quitar.onclick = ()=>quitarDeMasInfo(pregunta);
-    fila.appendChild(leerB); fila.appendChild(quitar);
-    div.appendChild(fila);
+    fila.appendChild(leerB); fila.appendChild(webB); fila.appendChild(quitar);
+    div.appendChild(fila); div.appendChild(webRes);
     lista.appendChild(div);
   });
 }
@@ -973,7 +1063,7 @@ function prepararPregunta(q){
 
 /* ================================ ESTADO ================================ */
 const E = {
-  modos:new Set(["mat","prog"]), niveles:new Set([2,3]), num:15,
+  modos:new Set(["mat","prog"]), niveles:new Set([2,3]), num:5,
   temporizador:"Sin límite",
   preguntas:[], actual:0, aciertos:0, respuestas:[],
   tipoTimer:null, segundosPregunta:0, minutosTotal:0,
@@ -1027,7 +1117,22 @@ $("m-prog").onclick = ()=>{ E.modos.has("prog")?E.modos.delete("prog"):E.modos.a
 [1,2,3].forEach(n=>{
   $("n-"+n).onclick = ()=>{ E.niveles.has(n)?E.niveles.delete(n):E.niveles.add(n); pintarSeleccion(); };
 });
-$("num").oninput = e=>{ E.num = +e.target.value; $("num-val").textContent = E.num; };
+function pintarPresets(){
+  document.querySelectorAll("#num-presets .rect").forEach(b=>{
+    b.classList.toggle("sel", +b.dataset.n === E.num);
+  });
+}
+[5,10,15,20,25].forEach(n=>{
+  $("num-presets").querySelector('[data-n="'+n+'"]').onclick = ()=>{
+    E.num = n; $("num").value = n; pintarPresets();
+  };
+});
+$("num").oninput = e=>{
+  const v = parseInt(e.target.value, 10);
+  if(isNaN(v)) return;
+  E.num = Math.max(1, Math.min(200, v));
+  pintarPresets();
+};
 $("timer").onchange = e=>{ E.temporizador = e.target.value; };
 $("btn-comenzar").onclick = iniciar;
 $("btn-stats").onclick = mostrarEstadisticas;
@@ -1059,7 +1164,10 @@ $("btn-leer").onclick = ()=>{
 };
 $("btn-masinfo").onclick = ()=>{
   const q = E.preguntas[E.actual];
-  if(q) marcarMasInfo(q);
+  if(!q) return;
+  const ya = enMasInfo(q.pregunta);
+  marcarMasInfo(q);
+  if(!ya) buscarEnInternet(q.pregunta, $("q-web"), null, q.subtema);
 };
 $("btn-volver").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-menu"); };
 $("btn-volver2").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-menu"); };
@@ -1169,6 +1277,7 @@ function mostrarPregunta(){
   $("q-pregunta").textContent = q.pregunta;
   $("q-feedback").textContent = "";
   $("btn-siguiente").disabled = true;
+  const w = $("q-web"); if(w){ w.style.display = "none"; w.textContent = ""; }
   $("btn-siguiente").textContent = (E.actual === total-1) ? "Ver resultados" : "Siguiente →";
 
   actualizarBotonMarcas();
@@ -1428,6 +1537,7 @@ window.addEventListener("error", e=>{
 try{
   document.getElementById("js-check").remove();
   pintarSeleccion();
+  pintarPresets();
   actualizarContadorMenu();
   mostrar("pantalla-menu");
 }catch(e){
