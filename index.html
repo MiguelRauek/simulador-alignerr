@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#14141f">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Simulador Examen Alignerr</title>
 <style>
   :root{
@@ -223,6 +226,10 @@
         <option>30 min total</option>
       </select>
 
+      <div class="fila" style="margin-top:6px">
+        <button class="rect" id="btn-autoleer" style="--c:#34d399">🔊 Leer pregunta automática: SÍ</button>
+      </div>
+
       <div class="fila-botones">
         <button class="secundario" id="btn-stats">Estadísticas</button>
         <button class="secundario" id="btn-desafios">⚔️ Desafíos</button>
@@ -232,7 +239,7 @@
         <button class="peligro" id="btn-limpio">🧹 Modo limpio</button>
       </div>
       <p class="nota">Las preguntas se eligen al azar y las opciones se barajan en cada intento.</p>
-      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.11</span></p>
+      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.12</span></p>
     </div>
   </div>
 </section>
@@ -378,7 +385,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.11";
+const VERSION = "2.12";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -667,6 +674,12 @@ async function buscarEnInternet(pregunta, zona, btn, subtema){
     leerNuevo(expandirTexto(texto));
   }catch(e){
     zona.textContent = "⚠ No es posible buscar sin conexión a internet.";
+    const rb = document.createElement("button");
+    rb.className = "secundario"; rb.style.marginTop = "6px";
+    rb.textContent = "🔄 Reintentar";
+    rb.onclick = ()=>{ buscarEnInternet(pregunta, zona, btn, subtema); };
+    zona.appendChild(document.createElement("br"));
+    zona.appendChild(rb);
   }finally{
     clearTimeout(t);
     if(btn) btn.disabled = false;
@@ -842,7 +855,7 @@ function mostrarMasInfoEnQuiz(q){
     if(q.ext){
       el.textContent = "📖 Explicación ampliada: "+q.ext;
     }else{
-      el.textContent = "✅ Marcada. Avísame en OpenWork y añado una explicación más completa para esta pregunta.";
+      el.textContent = "✅ Marcada. Se ha buscado en internet (si hay conexión).";
     }
     el.style.display = "";
   }else{
@@ -1134,6 +1147,18 @@ $("num").oninput = e=>{
   pintarPresets();
 };
 $("timer").onchange = e=>{ E.temporizador = e.target.value; };
+let autoleer = localStorage.getItem("alignerr-simulador-autoleer-v1") !== "0";
+function pintarAutoleer(){
+  const b = $("btn-autoleer");
+  if(!b) return;
+  b.textContent = autoleer ? "🔊 Leer pregunta automática: SÍ" : "🔇 Leer pregunta automática: NO";
+  b.classList.toggle("sel", autoleer);
+}
+$("btn-autoleer").onclick = ()=>{
+  autoleer = !autoleer;
+  try{ localStorage.setItem("alignerr-simulador-autoleer-v1", autoleer ? "1" : "0"); }catch(e){}
+  pintarAutoleer();
+};
 $("btn-comenzar").onclick = iniciar;
 $("btn-stats").onclick = mostrarEstadisticas;
 $("btn-desafios").onclick = mostrarDesafios;
@@ -1300,6 +1325,14 @@ function mostrarPregunta(){
   }else{
     cancelarTimer(); E.tiempoRestante=0; $("q-timer").textContent="";
   }
+
+  if(autoleer){
+    const sub = (SUBTEMAS[q.tema] && SUBTEMAS[q.tema][q.subtema]) || q.subtema || "";
+    let ctx = "Pregunta "+(E.actual+1)+" de "+total+". "+TEMAS[q.tema]+". "+
+              NIVELES[q.nivel]+". Aciertos: "+E.aciertos+".";
+    if(sub) ctx += " "+sub+".";
+    leerNuevo(ctx+" "+textoLeerPregunta(q, false));
+  }
 }
 function bloquearOpciones(correcta, elegida){
   const btns = $("q-opciones").querySelectorAll("button");
@@ -1310,6 +1343,7 @@ function bloquearOpciones(correcta, elegida){
   });
 }
 function responder(idx){
+  if("speechSynthesis" in window) speechSynthesis.cancel();
   if(E.tipoTimer === "pregunta") cancelarTimer();
   const q = E.preguntas[E.actual], correcta = q.correcta;
   bloquearOpciones(correcta, idx);
@@ -1538,8 +1572,12 @@ try{
   document.getElementById("js-check").remove();
   pintarSeleccion();
   pintarPresets();
+  pintarAutoleer();
   actualizarContadorMenu();
   mostrar("pantalla-menu");
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  }
 }catch(e){
   const d = document.getElementById("err-overlay");
   if(d){ d.style.display = "block"; d.textContent = "⚠ Error al iniciar: " + e.message; }
