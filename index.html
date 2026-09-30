@@ -141,6 +141,13 @@
     border:1.5px solid #34d399;border-radius:11px;font-size:.85rem;font-weight:700;
     padding:7px 10px;cursor:pointer;margin:8px 0 0;}
   #btn-masinfo.en-masinfo{color:var(--ok);border-color:var(--ok);}
+  #btn-voz{background:var(--card2);color:#f472b6;
+    border:1.5px solid #f472b6;border-radius:11px;font-size:.85rem;font-weight:700;
+    padding:7px 10px;cursor:pointer;}
+  #btn-voz.escuchando{background:#f472b6;color:#0d0d14;}
+  #btn-pausa{background:var(--card2);color:#fbbf24;
+    border:1.5px solid #fbbf24;border-radius:11px;font-size:.85rem;font-weight:700;
+    padding:7px 10px;cursor:pointer;}
   #q-mas{font-size:.95rem;margin:8px 0 0;white-space:pre-wrap;color:#34d399;
     background:rgba(52,211,153,.08);border-radius:9px;padding:8px 10px;}
   #q-web,.web-res{font-size:.9rem;margin:8px 0 0;white-space:pre-wrap;color:#4a9eff;
@@ -229,6 +236,10 @@
       <div class="fila" style="margin-top:6px">
         <button class="rect" id="btn-autoleer" style="--c:#34d399">🔊 Leer pregunta automática: SÍ</button>
       </div>
+      <div class="fila" style="margin-top:6px">
+        <label for="sel-voz" style="flex:0 0 auto;color:var(--sub);font-size:.85rem;align-self:center">🗣 Voz:</label>
+        <select id="sel-voz" style="flex:1"></select>
+      </div>
 
       <div class="fila-botones">
         <button class="secundario" id="btn-stats">Estadísticas</button>
@@ -239,7 +250,7 @@
         <button class="peligro" id="btn-limpio">🧹 Modo limpio</button>
       </div>
       <p class="nota">Las preguntas se eligen al azar y las opciones se barajan en cada intento.</p>
-      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.12</span></p>
+      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.13</span></p>
     </div>
   </div>
 </section>
@@ -258,6 +269,8 @@
     <p id="q-pregunta"></p>
     <div class="fila-marcas">
       <button id="btn-leer">🔊 Leer pregunta</button>
+      <button id="btn-pausa" style="display:none">⏸ Pausa</button>
+      <button id="btn-voz">🎤 Responder por voz</button>
       <button id="btn-desafio">⚔️ Marcar como Desafío (5×)</button>
     </div>
     <div id="q-opciones"></div>
@@ -385,7 +398,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.12";
+const VERSION = "2.13";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -590,17 +603,39 @@ function pintarOlvido(){
   });
 }
 /* ========================= LECTURA EN VOZ ALTA ========================= */
+const CLAVE_VOZ = "alignerr-simulador-voz-v1";
+function vozElegida(){
+  try{
+    const n = localStorage.getItem(CLAVE_VOZ);
+    if(!n) return null;
+    return speechSynthesis.getVoices().find(v=>v.name===n) || null;
+  }catch(e){ return null; }
+}
+function aplicarVoz(u){
+  const v = vozElegida();
+  if(v) u.voice = v;
+}
+function actualizarPausa(){
+  const b = $("btn-pausa");
+  if(!b) return;
+  if(!("speechSynthesis" in window)){ b.style.display = "none"; return; }
+  if(speechSynthesis.paused){ b.style.display = ""; b.textContent = "▶ Reanudar"; }
+  else if(speechSynthesis.speaking){ b.style.display = ""; b.textContent = "⏸ Pausa"; }
+  else b.style.display = "none";
+}
 function leer(texto, btn){
   if(!("speechSynthesis" in window)) return;
   if(speechSynthesis.speaking){
     speechSynthesis.cancel();
     if(btn) btn.textContent = "🔊 Leer";
+    actualizarPausa();
     return;
   }
   const u = new SpeechSynthesisUtterance(texto);
   u.lang = "es-ES"; u.rate = 1;
-  u.onstart = ()=>{ if(btn) btn.textContent = "🔇 Parar"; };
-  u.onend = u.onerror = ()=>{ if(btn) btn.textContent = "🔊 Leer"; };
+  aplicarVoz(u);
+  u.onstart = ()=>{ if(btn) btn.textContent = "🔇 Parar"; actualizarPausa(); };
+  u.onend = u.onerror = ()=>{ if(btn) btn.textContent = "🔊 Leer"; actualizarPausa(); };
   speechSynthesis.speak(u);
 }
 function leerNuevo(texto){
@@ -608,6 +643,9 @@ function leerNuevo(texto){
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(texto);
   u.lang = "es-ES"; u.rate = 1;
+  aplicarVoz(u);
+  u.onstart = ()=>actualizarPausa();
+  u.onend = u.onerror = ()=>actualizarPausa();
   speechSynthesis.speak(u);
 }
 const MAPA_SUBTEMA = {
@@ -668,7 +706,7 @@ async function buscarEnInternet(pregunta, zona, btn, subtema){
     const d2 = await r2.json();
     const page = Object.values(d2.query.pages)[0];
     const ext = limpiarExtracto((page && page.extract) || "");
-    const texto = "📖 Wikipedia: " + hit.title + ". " +
+    const texto = "📖 " + hit.title + ". " +
                   ext.slice(0, 700) + (ext.length > 700 ? "…" : "");
     zona.textContent = texto;
     leerNuevo(expandirTexto(texto));
@@ -715,6 +753,8 @@ function numeroAPalabras(n){
 function expandirTexto(t){
   if(!t) return t;
   let s = String(t);
+  // emojis fuera de la lectura (no se dicen en voz alta)
+  s = s.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}\u{23F0}\u{23F1}\u{23F3}\u{231A}]/gu, " ");
   // factorial solo tras número: 5! → "cinco factorial" (antes de convertir números)
   s = s.replace(/(\d)\s*!/g, "$1 factorial");
   // fracciones comunes: 1/2 → "un medio", 3/4 → "tres cuartos"...
@@ -737,8 +777,12 @@ function expandirTexto(t){
   s = s.replace(/logₑ\s*\(/g, "logaritmo neperiano de ");
   s = s.replace(/ln\s*\(/g, "logaritmo neperiano de ");
   s = s.replace(/√\s*\(/g, "raíz cuadrada de ");
+  s = s.replace(/∛\s*\(/g, "raíz cúbica de ");
+  s = s.replace(/∜\s*\(/g, "raíz cuarta de ");
   // valor absoluto |x|
   s = s.replace(/\|([^|]+)\|/g, "valor absoluto de $1");
+  // resta con número tras letra: x-3 → "x menos tres" (con espacio)
+  s = s.replace(/([A-Za-z0-9)\]])\s*-\s*(\d+(?:[.,]\d+)?)/g, "$1 menos $2");
   // números a palabras (incluye decimales y negativos); si va seguido de
   // una letra (2x) se deja un espacio
   const convNum = m=>{
@@ -756,34 +800,58 @@ function expandirTexto(t){
   };
   s = s.replace(/-?\d+(?:[.,]\d+)?(?=[A-Za-z])/g, m=>convNum(m)+" ");
   s = s.replace(/-?\d+(?:[.,]\d+)?/g, convNum);
+  // comas y puntos sueltos: se nombran (importante en programación)
+  s = s.replace(/,/g, " coma ");
+  s = s.replace(/\./g, " punto ");
   // división entre variables: x/2 → "x entre dos"
   s = s.replace(/([A-Za-z])\s*\/\s*([A-Za-z0-9])/g, "$1 entre $2");
   // símbolos y operadores (los largos primero), con espacios alrededor
   const reemplazos = [
+    ["<=","menor o igual que"], [">=","mayor o igual que"], ["==","igual a"],
+    ["!=","distinto de"], ["->","flecha"], ["=>","implica"], ["&&","y"], ["||","o"],
+    ["//","entre"], ["**","elevado a "], ["*","por"], ["^","elevado a "],
     ["≤","menor o igual que"], ["≥","mayor o igual que"], ["≠","distinto de"],
     ["≈","aproximadamente"], ["±","más menos"], ["×","por"], ["÷","entre"],
     ["−","menos"], ["+","más"], ["=","igual a"], ["<","menor que"], [">","mayor que"],
-    ["%","por ciento"], ["°","grados"], ["²","al cuadrado"], ["³","al cubo"],
-    ["√","raíz cuadrada de "], ["π","pi"], ["∞","infinito"], ["→","flecha"],
-    ["⇒","implica"], ["∈","pertenece a"], ["∉","no pertenece a"], ["⊂","está contenido en"],
-    ["∪","unión"], ["∩","intersección"], ["∑","sumatorio"], ["∫","integral"],
+    ["%","por ciento"], ["‰","por mil"], ["°","grados"], ["℃","grados centígrados"],
+    ["℉","grados Fahrenheit"], ["²","al cuadrado"], ["³","al cubo"],
+    ["√","raíz cuadrada de "], ["∛","raíz cúbica de "], ["∜","raíz cuarta de "],
+    ["π","pi"], ["∞","infinito"], ["→","flecha"], ["←","flecha izquierda"],
+    ["↔","si y solo si"], ["⇔","si y solo si"], ["⇒","implica"], ["⇐","implica"],
+    ["↦","se asigna a"], ["∈","pertenece a"], ["∉","no pertenece a"],
+    ["⊂","está contenido en"], ["⊆","subconjunto de"], ["⊇","superconjunto de"],
+    ["⊄","no está contenido en"], ["∪","unión"], ["∩","intersección"],
+    ["∑","sumatorio"], ["∏","productorio"], ["∫","integral"], ["∂","derivada parcial"],
+    ["∇","nabla"], ["∝","proporcional a"], ["≅","congruente con"], ["≡","equivalente a"],
+    ["≪","mucho menor que"], ["≫","mucho mayor que"], ["∃","existe"], ["∀","para todo"],
+    ["∅","conjunto vacío"], ["∧","y lógico"], ["∨","o lógico"], ["¬","no lógico"],
+    ["⊕","o exclusivo"], ["∴","por lo tanto"], ["∵","porque"], ["∼","similar a"],
     ["Δ","delta"], ["λ","lambda"], ["α","alfa"], ["β","beta"], ["θ","theta"],
     ["μ","mu"], ["σ","sigma"], ["Ω","omega"], ["ω","omega"], ["·","por"],
     ["•","punto"], ["…","puntos suspensivos"], ["&","y"], ["|","barra vertical"],
     ["\\","barra invertida"], ["_","guion bajo"], ["½","un medio"], ["⅓","un tercio"],
     ["¼","un cuarto"], ["¾","tres cuartos"], ["⅔","dos tercios"], ["⅛","un octavo"],
-    ["(","paréntesis"], [")","cierra paréntesis"], ["[","corchete"],
-    ["]","cierra corchete"], ["{","llave"], ["}","cierra llave"],
-    ["/","barra"], ["€","euros"], ["$","dólares"]
+    ["′","prima"], ["″","doble prima"], ["(","paréntesis"], [")","cierra paréntesis"],
+    ["[","corchete"], ["]","cierra corchete"], ["{","llave"], ["}","cierra llave"],
+    ["⌊","suelo de "], ["⌋","cierra suelo"], ["⌈","techo de "], ["⌉","cierra techo"],
+    ["/","barra"], ["-","menos"], ["!","factorial"], ["€","euros"], ["$","dólares"]
   ];
   for(const [a,b] of reemplazos) s = s.split(a).join(" "+b+" ");
-  // superíndices y subíndices restantes
+  // superíndices y subíndices restantes (números y letras: eˣ, xʸ, 2ⁿ...)
   const sup = {"⁰":"cero","¹":"uno","²":"dos","³":"tres","⁴":"cuatro","⁵":"cinco",
-               "⁶":"seis","⁷":"siete","⁸":"ocho","⁹":"nueve"};
+               "⁶":"seis","⁷":"siete","⁸":"ocho","⁹":"nueve",
+               "ᵃ":"a","ᵇ":"b","ᶜ":"c","ᵈ":"d","ᵉ":"e","ᶠ":"f","ᵍ":"g","ʰ":"h","ⁱ":"i",
+               "ʲ":"j","ᵏ":"k","ˡ":"l","ᵐ":"m","ⁿ":"n","ᵒ":"o","ᵖ":"p","ʳ":"r","ˢ":"s",
+               "ᵗ":"t","ᵘ":"u","ᵛ":"v","ʷ":"w","ˣ":"x","ʸ":"y","ᶻ":"z",
+               "⁺":"más","⁻":"menos","⁼":"igual a","⁽":"paréntesis","⁾":"cierra paréntesis"};
   const sub = {"₀":"cero","₁":"uno","₂":"dos","₃":"tres","₄":"cuatro","₅":"cinco",
-               "₆":"seis","₇":"siete","₈":"ocho","₉":"nueve"};
-  s = s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, m=>" elevado a "+m.split("").map(c=>sup[c]).join(" "));
-  s = s.replace(/[₀₁₂₃₄₅₆₇₈₉]+/g, m=>" subíndice "+m.split("").map(c=>sub[c]).join(" "));
+               "₆":"seis","₇":"siete","₈":"ocho","₉":"nueve",
+               "ₐ":"a","ₑ":"e","ₕ":"h","ᵢ":"i","ⱼ":"j","ₖ":"k","ₗ":"l","ₘ":"m",
+               "ₙ":"n","ₒ":"o","ₚ":"p","ᵣ":"r","ₛ":"s","ₜ":"t","ᵤ":"u","ᵥ":"v","ₓ":"x"};
+  s = s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ⁺⁻⁼⁽⁾]+/g,
+                m=>" elevado a "+m.split("").map(c=>sup[c]).join(" "));
+  s = s.replace(/[₀₁₂₃₄₅₆₇₈₉ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓ]+/g,
+                m=>" subíndice "+m.split("").map(c=>sub[c]).join(" "));
   s = s.replace(/\s{2,}/g," ").trim();
   return s;
 }
@@ -1159,6 +1227,31 @@ $("btn-autoleer").onclick = ()=>{
   try{ localStorage.setItem("alignerr-simulador-autoleer-v1", autoleer ? "1" : "0"); }catch(e){}
   pintarAutoleer();
 };
+function cargarVoces(){
+  if(!("speechSynthesis" in window)) return;
+  const sel = $("sel-voz");
+  if(!sel) return;
+  const voces = speechSynthesis.getVoices().filter(v=>v.lang && v.lang.toLowerCase().startsWith("es"));
+  const actual = localStorage.getItem(CLAVE_VOZ) || "";
+  sel.innerHTML = "";
+  const op0 = document.createElement("option");
+  op0.value = ""; op0.textContent = "Voz por defecto";
+  sel.appendChild(op0);
+  voces.forEach(v=>{
+    const op = document.createElement("option");
+    op.value = v.name;
+    op.textContent = v.name + (v.default ? " (por defecto)" : "");
+    sel.appendChild(op);
+  });
+  sel.value = voces.some(v=>v.name===actual) ? actual : "";
+}
+if("speechSynthesis" in window){
+  cargarVoces();
+  speechSynthesis.onvoiceschanged = cargarVoces;
+}
+$("sel-voz").onchange = ()=>{
+  try{ localStorage.setItem(CLAVE_VOZ, $("sel-voz").value); }catch(e){}
+};
 $("btn-comenzar").onclick = iniciar;
 $("btn-stats").onclick = mostrarEstadisticas;
 $("btn-desafios").onclick = mostrarDesafios;
@@ -1186,6 +1279,74 @@ $("btn-leer").onclick = ()=>{
             NIVELES[q.nivel]+". Aciertos: "+E.aciertos+".";
   if(sub) ctx += " "+sub+".";
   leer(ctx+" "+textoLeerPregunta(q, E.respondidas.has(E.actual)), $("btn-leer"));
+};
+let recVoz = null;
+function actualizarBotonVoz(){
+  const b = $("btn-voz");
+  if(!b) return;
+  b.textContent = recVoz ? "🔴 Escuchando... (tocar para parar)" : "🎤 Responder por voz";
+  b.classList.toggle("escuchando", !!recVoz);
+}
+function responderPorVoz(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    $("q-feedback").textContent = "Tu navegador no permite responder por voz.";
+    return;
+  }
+  if(recVoz){
+    try{ recVoz.stop(); }catch(e){}
+    recVoz = null; actualizarBotonVoz();
+    return;
+  }
+  const q = E.preguntas[E.actual];
+  if(!q || E.respondidas.has(E.actual)){
+    $("q-feedback").textContent = "Esta pregunta ya está respondida.";
+    return;
+  }
+  const rec = new SR();
+  recVoz = rec;
+  rec.lang = "es-ES";
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
+  let okVoz = false, errVoz = false;
+  const norm = x=>String(x).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/equis/g,"x").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+  rec.onstart = ()=>{ actualizarBotonVoz(); $("q-feedback").textContent = "🎤 Escuchando... di A, B, C o D."; };
+  rec.onresult = ev=>{
+    okVoz = true;
+    const t = norm((ev.results[0][0].transcript)||"");
+    const letras = {"a":0,"b":1,"c":2,"d":3,"be":1,"ce":2,"de":3};
+    if(letras[t] !== undefined){ responder(letras[t]); return; }
+    const m2 = t.match(/(?:opcion|letra|respuesta|la)\s*([abcd])/);
+    if(m2){ responder("abcd".indexOf(m2[1])); return; }
+    for(let i=0;i<q.opciones.length;i++){
+      const on = norm(expandirTexto(q.opciones[i]));
+      if(on && (t.includes(on) || on.includes(t))){ responder(i); return; }
+    }
+    $("q-feedback").textContent = "No te he entendido. Di A, B, C o D.";
+    leerNuevo("No te he entendido. Di A, B, C o D.");
+  };
+  rec.onerror = ev=>{
+    errVoz = true;
+    if(ev.error === "not-allowed" || ev.error === "service-not-allowed"){
+      $("q-feedback").textContent = "Permiso de micrófono denegado. Actívalo en el navegador.";
+    }else if(ev.error !== "aborted"){
+      $("q-feedback").textContent = "No se pudo escuchar. Inténtalo de nuevo.";
+    }
+    recVoz = null; actualizarBotonVoz();
+  };
+  rec.onend = ()=>{
+    recVoz = null; actualizarBotonVoz();
+    if(!okVoz && !errVoz) $("q-feedback").textContent = "No se ha detectado voz. Inténtalo de nuevo.";
+  };
+  rec.start();
+}
+$("btn-voz").onclick = responderPorVoz;
+$("btn-pausa").onclick = ()=>{
+  if(!("speechSynthesis" in window)) return;
+  if(speechSynthesis.paused) speechSynthesis.resume();
+  else if(speechSynthesis.speaking) speechSynthesis.pause();
+  actualizarPausa();
 };
 $("btn-masinfo").onclick = ()=>{
   const q = E.preguntas[E.actual];
@@ -1283,6 +1444,7 @@ function iniciar(){
 function mostrarPregunta(){
   const q = E.preguntas[E.actual], total = E.preguntas.length;
   if("speechSynthesis" in window) speechSynthesis.cancel();
+  actualizarPausa();
   const bl = $("btn-leer"); if(bl) bl.textContent = "🔊 Leer pregunta";
   $("q-progreso").textContent = "Pregunta "+(E.actual+1)+" de "+total;
   $("q-puntos").textContent = "Aciertos: "+E.aciertos;
@@ -1344,6 +1506,8 @@ function bloquearOpciones(correcta, elegida){
 }
 function responder(idx){
   if("speechSynthesis" in window) speechSynthesis.cancel();
+  actualizarPausa();
+  if(recVoz){ try{ recVoz.stop(); }catch(e){} recVoz = null; actualizarBotonVoz(); }
   if(E.tipoTimer === "pregunta") cancelarTimer();
   const q = E.preguntas[E.actual], correcta = q.correcta;
   bloquearOpciones(correcta, idx);
