@@ -247,7 +247,17 @@
         <button class="rect" id="btn-vozauto" style="--c:#f472b6">🎤 Responder por voz automático: SÍ</button>
       </div>
 
+<div class="card" style="margin-top:14px">
+      <h2 style="margin-top:0">Copias de seguridad</h2>
+      <p class="nota">Exporta tus estadísticas para pasarlas a otra versión o guardarlas.</p>
       <div class="fila-botones">
+        <button class="secundario" id="btn-exportar">📤 Exportar estadísticas</button>
+        <button class="secundario" id="btn-importar">📥 Importar estadísticas</button>
+      </div>
+      <input type="file" id="file-importar" accept=".json,application/json" style="display:none">
+      <div id="s-export-msg" style="margin-top:8px"></div>
+    </div>
+    <div class="fila-botones">
         <button class="secundario" id="btn-stats">Estadísticas</button>
         <button class="secundario" id="btn-desafios">⚔️ Desafíos</button>
         <button class="secundario" id="btn-olvidos">🧠 Olvido</button>
@@ -256,7 +266,7 @@
         <button class="peligro" id="btn-limpio">🧹 Modo limpio</button>
       </div>
       <p class="nota">Las preguntas se eligen al azar y las opciones se barajan en cada intento.</p>
-      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.15</span></p>
+      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.16</span></p>
     </div>
   </div>
 </section>
@@ -404,7 +414,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.15";
+const VERSION = "2.16";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -649,11 +659,22 @@ if("wakeLock" in navigator){
 setInterval(()=>{
   if(("speechSynthesis" in window) && (speechSynthesis.speaking || recVoz)) pedirWakeLock();
 }, 10000);
+function esVozEspana(v){
+  if(!v) return false;
+  const l = (v.lang||"").toLowerCase();
+  const n = (v.name||"").toLowerCase();
+  return l === "es-es" || n.includes("españa") || n.includes("spanish (spain)") || n.includes("spanish (es)");
+}
 function vozElegida(){
   try{
     const n = localStorage.getItem(CLAVE_VOZ);
-    if(!n) return null;
-    return speechSynthesis.getVoices().find(v=>v.name===n) || null;
+    const voces = speechSynthesis.getVoices();
+    if(n){
+      const v = voces.find(v=>v.name===n);
+      if(v && esVozEspana(v)) return v;
+    }
+    return voces.find(esVozEspana) ||
+           voces.find(v=>v.lang && v.lang.toLowerCase().startsWith("es")) || null;
   }catch(e){ return null; }
 }
 function aplicarVoz(u){
@@ -918,9 +939,9 @@ function expandirTexto(t, prosa){
 }
 function textoLeerPregunta(q, conExplicacion){
   let t = expandirTexto(q.pregunta)+". Opciones: ";
-  t += q.opciones.map((o,i)=>"A B C D".split(" ")[i]+": "+expandirTexto(o)).join(". ")+".";
+  t += q.opciones.map((o,i)=>["uno","dos","tres","cuatro"][i]+": "+expandirTexto(o)).join(". ")+".";
   if(conExplicacion){
-    t += " Respuesta correcta: "+"ABCD"[q.correcta]+": "+
+    t += " Respuesta correcta: "+["uno","dos","tres","cuatro"][q.correcta]+": "+
          expandirTexto(q.opciones[q.correcta])+". "+expandirTexto(q.explicacion, true);
   }
   return t;
@@ -1298,17 +1319,19 @@ function cargarVoces(){
   if(!sel) return;
   const voces = speechSynthesis.getVoices().filter(v=>v.lang && v.lang.toLowerCase().startsWith("es"));
   const actual = localStorage.getItem(CLAVE_VOZ) || "";
+  voces.sort((a,b)=> (esVozEspana(b)?1:0) - (esVozEspana(a)?1:0));
   sel.innerHTML = "";
   const op0 = document.createElement("option");
-  op0.value = ""; op0.textContent = "Voz por defecto";
+  op0.value = ""; op0.textContent = "Voz por defecto (España)";
   sel.appendChild(op0);
   voces.forEach(v=>{
     const op = document.createElement("option");
     op.value = v.name;
-    op.textContent = v.name + (v.default ? " (por defecto)" : "");
+    op.textContent = v.name + (esVozEspana(v) ? " (España)" : "") + (v.default ? " (por defecto)" : "");
     sel.appendChild(op);
   });
-  sel.value = voces.some(v=>v.name===actual) ? actual : "";
+  const guardada = voces.find(v=>v.name===actual);
+  sel.value = guardada ? actual : (voces.find(esVozEspana) ? voces.find(esVozEspana).name : "");
 }
 if("speechSynthesis" in window){
   cargarVoces();
@@ -1392,20 +1415,22 @@ function iniciarReconocimiento(auto){
   let okVoz = false, errVoz = false;
   const norm = x=>String(x).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
     .replace(/equis/g,"x").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
-  rec.onstart = ()=>{ actualizarBotonVoz(); pedirWakeLock(); if(!auto) $("q-feedback").textContent = "🎤 Escuchando... di A, B, C o D."; };
+  rec.onstart = ()=>{ actualizarBotonVoz(); pedirWakeLock(); if(!auto) $("q-feedback").textContent = "🎤 Escuchando... di uno, dos, tres o cuatro."; };
   rec.onresult = ev=>{
     okVoz = true;
     const t = norm((ev.results[0][0].transcript)||"");
+    const nums = {"uno":0,"un":0,"1":0,"dos":1,"2":1,"tres":2,"3":2,"cuatro":3,"4":3};
+    if(nums[t] !== undefined){ responder(nums[t]); return; }
+    const m2 = t.match(/(?:opcion|letra|respuesta|la|el)\s*(uno|un|dos|tres|cuatro|[1234])/);
+    if(m2){ responder(nums[m2[1]]); return; }
     const letras = {"a":0,"b":1,"c":2,"d":3,"be":1,"ce":2,"de":3};
     if(letras[t] !== undefined){ responder(letras[t]); return; }
-    const m2 = t.match(/(?:opcion|letra|respuesta|la)\s*([abcd])/);
-    if(m2){ responder("abcd".indexOf(m2[1])); return; }
     for(let i=0;i<q.opciones.length;i++){
       const on = norm(expandirTexto(q.opciones[i]));
       if(on && (t.includes(on) || on.includes(t))){ responder(i); return; }
     }
-    $("q-feedback").textContent = "No te he entendido. Di A, B, C o D.";
-    leerNuevo("No te he entendido. Di A, B, C o D.");
+    $("q-feedback").textContent = "No te he entendido. Di uno, dos, tres o cuatro.";
+    leerNuevo("No te he entendido. Di uno, dos, tres o cuatro.");
   };
   rec.onerror = ev=>{
     errVoz = true;
@@ -1424,6 +1449,62 @@ function iniciarReconocimiento(auto){
   rec.start();
   return true;
 }
+function escucharComando(){
+  if(!vozauto) return;
+  if(!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) return;
+  if(recVoz) return;
+  const q = E.preguntas[E.actual];
+  if(!q || !E.respondidas.has(E.actual)) return;
+  if(!$("pantalla-quiz").classList.contains("activa")) return;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const rec = new SR();
+  recVoz = rec;
+  rec.lang = "es-ES";
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
+  let okVoz = false, errVoz = false, reintento = false;
+  const norm = x=>String(x).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/equis/g,"x").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+  rec.onstart = ()=>{ actualizarBotonVoz(); pedirWakeLock(); };
+  rec.onresult = ev=>{
+    okVoz = true;
+    const t = norm((ev.results[0][0].transcript)||"");
+    if(t.includes("siguiente") || t.includes("adelante") || t.includes("continuar")){
+      avanzarPregunta();
+      return;
+    }
+    if(t.includes("repetir") || t.includes("otra vez") || t.includes("repita")){
+      const q2 = E.preguntas[E.actual];
+      if(q2){
+        leerNuevo(textoLeerPregunta(q2, true)+". "+$("q-feedback").textContent, escucharComando);
+      }
+      return;
+    }
+    $("q-feedback").textContent = "No te he entendido. Di siguiente o repetir.";
+    leerNuevo("No te he entendido. Di siguiente o repetir.", escucharComando);
+  };
+  rec.onerror = ev=>{
+    if(ev.error === "no-speech"){
+      reintento = true;
+      recVoz = null; actualizarBotonVoz(); soltarWakeLock();
+      autoVozTimer = setTimeout(escucharComando, 1500);
+      return;
+    }
+    errVoz = true;
+    if(ev.error === "not-allowed" || ev.error === "service-not-allowed"){
+      $("q-feedback").textContent = "Permiso de micrófono denegado. Actívalo en los ajustes del navegador: Configuración de sitios, Micrófono.";
+      leerNuevo("Permiso de micrófono denegado. Actívalo en los ajustes del navegador, en Configuración de sitios, Micrófono.");
+    }
+    recVoz = null; actualizarBotonVoz(); soltarWakeLock();
+  };
+  rec.onend = ()=>{
+    recVoz = null; actualizarBotonVoz(); soltarWakeLock();
+    if(!okVoz && !errVoz && !reintento){
+      autoVozTimer = setTimeout(escucharComando, 1500);
+    }
+  };
+  rec.start();
+}
 function responderPorVoz(){
   if(bloqueoToques) return;
   if(recVoz){
@@ -1433,7 +1514,7 @@ function responderPorVoz(){
   }
   const q = E.preguntas[E.actual];
   if(q && E.respondidas.has(E.actual)){
-    $("q-feedback").textContent = "Esta pregunta ya está respondida.";
+    escucharComando();
     return;
   }
   iniciarReconocimiento(false);
@@ -1461,6 +1542,49 @@ $("btn-masinfo").onclick = ()=>{
   if(!ya) buscarEnInternet(q.pregunta, $("q-web"), null, q.subtema);
 };
 $("btn-volver").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-menu"); };
+$("btn-exportar").onclick = ()=>{
+  const d = cargarEstadisticas();
+  const json = JSON.stringify(d, null, 2);
+  try{
+    const blob = new Blob([json], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "estadisticas_alignerr.json";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    const m = $("s-export-msg");
+    if(m) m.textContent = "✅ Archivo guardado en Descargas: estadisticas_alignerr.json";
+    leerNuevo("Estadísticas exportadas. El archivo se ha guardado en Descargas.");
+  }catch(e){
+    const m = $("s-export-msg");
+    if(m) m.textContent = "⚠ No se pudo exportar: "+e.message;
+  }
+};
+$("btn-importar").onclick = ()=> $("file-importar").click();
+$("file-importar").onchange = ()=>{
+  const f = $("file-importar").files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const m = $("s-export-msg");
+    try{
+      const d = JSON.parse(reader.result);
+      if(typeof d !== "object" || d === null) throw 0;
+      d.examenes = d.examenes||0; d.preguntas = d.preguntas||0; d.aciertos = d.aciertos||0;
+      d.por_tema = d.por_tema||{}; d.por_nivel = d.por_nivel||{};
+      d.por_pregunta = d.por_pregunta||{}; d.mejor_pct = d.mejor_pct||0; d.ultimos = d.ultimos||[];
+      guardarEstadisticas(d);
+      mostrarEstadisticas();
+      if(m) m.textContent = "✅ Estadísticas importadas correctamente.";
+      leerNuevo("Estadísticas importadas correctamente.");
+    }catch(e){
+      if(m) m.textContent = "⚠ El archivo no es válido. No se importó nada.";
+      leerNuevo("El archivo no es válido. No se importó nada.");
+    }
+  };
+  reader.readAsText(f);
+};
 $("btn-volver2").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-menu"); };
 $("btn-borrar").onclick = ()=>{
   if(confirm("¿Seguro que quieres borrar todas las estadísticas?")){
@@ -1579,7 +1703,7 @@ function mostrarPregunta(){
   q.opciones.forEach((op,i)=>{
     const b = document.createElement("button");
     b.className = "opcion"; b.style.setProperty("--b", ct);
-    b.textContent = "ABCD"[i]+")  "+op;
+    b.textContent = (i+1)+")  "+op;
     b.onclick = ()=>{ if(bloqueoToques) return; responder(i); };
     cont.appendChild(b);
   });
@@ -1628,6 +1752,10 @@ function responder(idx){
   E.respondidas.add(E.actual);
   $("q-puntos").textContent = "Aciertos: "+E.aciertos;
   $("btn-siguiente").disabled = false;
+  if(vozauto){
+    const fb = $("q-feedback").textContent;
+    leerNuevo(fb, escucharComando);
+  }
 }
 function tiempoAgotado(){
   pararVoz();
@@ -1640,6 +1768,10 @@ function tiempoAgotado(){
                      elegida:"⏱ Sin responder", correcta:q.opciones[correcta], ok:false});
   E.respondidas.add(E.actual);
   $("btn-siguiente").disabled = false;
+  if(vozauto){
+    const fb = $("q-feedback").textContent;
+    leerNuevo(fb, escucharComando);
+  }
 }
 function finalizarPorTiempo(){
   cancelarTimer(); E.agotadoTotal = true;
@@ -1652,10 +1784,13 @@ function finalizarPorTiempo(){
   E.actual = E.preguntas.length;
   mostrarResultados();
 }
-$("btn-siguiente").onclick = ()=>{
-  if(bloqueoToques) return;
+function avanzarPregunta(){
   if(E.actual < E.preguntas.length-1){ E.actual++; mostrarPregunta(); }
   else mostrarResultados();
+}
+$("btn-siguiente").onclick = ()=>{
+  if(bloqueoToques) return;
+  avanzarPregunta();
 };
 
 /* ============================ RESULTADOS ============================ */
