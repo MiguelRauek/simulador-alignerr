@@ -142,6 +142,12 @@
     border:1.5px solid #34d399;border-radius:11px;font-size:.85rem;font-weight:700;
     padding:7px 10px;cursor:pointer;margin:8px 0 0;}
   #btn-masinfo.en-masinfo{color:var(--ok);border-color:var(--ok);}
+  #btn-saltar{background:var(--card2);color:var(--ambar);
+    border:1.5px solid var(--ambar);border-radius:11px;font-size:.85rem;font-weight:700;
+    padding:7px 10px;cursor:pointer;}
+  #btn-repetir{background:var(--card2);color:#34d399;
+    border:1.5px solid #34d399;border-radius:11px;font-size:.9rem;font-weight:700;
+    padding:9px 16px;cursor:pointer;margin-top:10px;}
   #btn-voz{background:var(--card2);color:#f472b6;
     border:1.5px solid #f472b6;border-radius:11px;font-size:.85rem;font-weight:700;
     padding:7px 10px;cursor:pointer;}
@@ -245,6 +251,14 @@
         <select id="sel-voz" style="flex:1"></select>
       </div>
       <div class="fila" style="margin-top:6px">
+        <label for="sel-vel" style="flex:0 0 auto;color:var(--sub);font-size:.85rem;align-self:center">🐢 Velocidad:</label>
+        <select id="sel-vel" style="flex:1">
+          <option value="0.8">Lenta</option>
+          <option value="1">Normal</option>
+          <option value="1.2">Rápida</option>
+        </select>
+      </div>
+      <div class="fila" style="margin-top:6px">
         <button class="rect" id="btn-vozauto" style="--c:#f472b6">🎤 Responder por voz automático: SÍ</button>
       </div>
 
@@ -271,7 +285,7 @@
         <button class="secundario" id="btn-reportes-menu">📋 Reportes (0)</button>
       </div>
       <p class="nota">Las preguntas se eligen al azar y las opciones se barajan en cada intento.</p>
-      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.17</span></p>
+      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.18</span></p>
     </div>
   </div>
 </section>
@@ -294,6 +308,7 @@
       <button id="btn-voz">🎤 Responder por voz</button>
       <button id="btn-desafio">⚔️ Marcar como Desafío (5×)</button>
       <button id="btn-reportar">⚠️ Reportar</button>
+      <button id="btn-saltar">⏭ Saltar</button>
     </div>
     <div id="q-opciones"></div>
     <button id="btn-olvido">🧠 Marcar como Olvido (no sale)</button>
@@ -301,6 +316,7 @@
     <div id="q-mas"></div>
     <button id="btn-masinfo">❓ Más explicación</button>
     <div id="q-web" style="display:none"></div>
+    <button id="btn-repetir" style="display:none">🔁 Repetir</button>
     <button id="btn-siguiente" disabled>Siguiente →</button>
   </div>
 </section>
@@ -348,7 +364,27 @@
       <div id="r-repaso"></div>
     </div>
     <div class="fila-botones">
+      <button class="secundario" id="btn-repetir-examen">🔁 Repetir examen</button>
+      <button class="secundario" id="btn-repasar-falladas">📖 Repasar falladas</button>
       <button class="primario" style="width:auto" id="btn-volver">← Volver al inicio</button>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== REPASO DE FALLADAS ======================== -->
+<section id="pantalla-repaso" class="pantalla">
+  <div class="caja">
+    <h1>📖 Repaso de falladas</h1>
+    <p id="rep-p-progreso" class="sub"></p>
+    <div class="card">
+      <p id="rep-p-pregunta" style="font-weight:700;font-size:1.05rem;margin:0 0 10px"></p>
+      <p id="rep-p-correcta" style="color:var(--ok);font-weight:700;margin:0 0 8px"></p>
+      <p id="rep-p-explicacion" style="color:var(--sub);margin:0"></p>
+    </div>
+    <div class="fila-botones">
+      <button class="secundario" id="btn-rep-leer">🔊 Leer</button>
+      <button class="secundario" id="btn-rep-siguiente">Siguiente →</button>
+      <button class="secundario" id="btn-rep-volver">← Volver</button>
     </div>
   </div>
 </section>
@@ -451,7 +487,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.17";
+const VERSION = "2.18";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -657,12 +693,18 @@ function pintarOlvido(){
 }
 /* ========================= LECTURA EN VOZ ALTA ========================= */
 const CLAVE_VOZ = "alignerr-simulador-voz-v1";
+const CLAVE_VELOCIDAD = "alignerr-simulador-velocidad-v1";
+function velocidadVoz(){
+  const v = parseFloat(localStorage.getItem(CLAVE_VELOCIDAD) || "1");
+  return (v === 0.8 || v === 1 || v === 1.2) ? v : 1;
+}
 let vozToken = 0;          // invalida callbacks de lecturas canceladas
 let recVoz = null;         // reconocimiento de voz activo
 let autoVozTimer = null;   // temporizador de escucha automática
 let bloqueoToques = false; // ignora toques justo tras desbloquear la pantalla
 let wakeLock = null;
 let ultimaCorrecta = false; // si la última respuesta fue correcta (para acortar lecturas)
+let repasoLista = [], repasoIdx = 0; // repaso de falladas desde resultados
 let reportes = JSON.parse(localStorage.getItem("alignerr-simulador-reportes-v1") || "[]");
 let reportePregunta = null;   // pregunta que se está reportando (o null si es propuesta nueva)
 let reporteDesdeQuiz = false; // si el panel se abrió desde el examen
@@ -714,6 +756,18 @@ if("wakeLock" in navigator){
 setInterval(()=>{
   if(("speechSynthesis" in window) && (speechSynthesis.speaking || recVoz)) pedirWakeLock();
 }, 10000);
+// bloqueo de rotación: la app siempre en vertical mientras está abierta
+function bloquearRotacion(){
+  try{
+    if(screen.orientation && screen.orientation.lock){
+      screen.orientation.lock("portrait").catch(()=>{});
+    }
+  }catch(e){}
+}
+bloquearRotacion();
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState === "visible") bloquearRotacion();
+});
 function esVozEspana(v){
   if(!v) return false;
   const l = (v.lang||"").toLowerCase();
@@ -756,7 +810,7 @@ function leer(texto, btn, alTerminar){
   }
   const token = ++vozToken;
   const u = new SpeechSynthesisUtterance(texto);
-  u.lang = "es-ES"; u.rate = 1;
+  u.lang = "es-ES"; u.rate = velocidadVoz();
   aplicarVoz(u);
   u.onstart = ()=>{ if(btn) btn.textContent = "🔇 Parar"; actualizarPausa(); pedirWakeLock(); };
   u.onend = u.onerror = ()=>{
@@ -772,7 +826,7 @@ function leerNuevo(texto, alTerminar){
   speechSynthesis.cancel();
   const token = ++vozToken;
   const u = new SpeechSynthesisUtterance(texto);
-  u.lang = "es-ES"; u.rate = 1;
+  u.lang = "es-ES"; u.rate = velocidadVoz();
   aplicarVoz(u);
   u.onstart = ()=>{ actualizarPausa(); pedirWakeLock(); };
   u.onend = u.onerror = ()=>{
@@ -1046,7 +1100,7 @@ function actualizarBotonMasInfo(){
   const b = $("btn-masinfo");
   if(!b || !q) return;
   if(enMasInfo(q.pregunta)){
-    b.textContent = "✅ Marcada — quitar";
+    b.textContent = "✅ Añadida — quitar";
     b.classList.add("en-masinfo");
   }else{
     b.textContent = "❓ Más explicación";
@@ -1060,7 +1114,7 @@ function mostrarMasInfoEnQuiz(q){
     if(q.ext){
       el.textContent = "📖 Explicación ampliada: "+q.ext;
     }else{
-      el.textContent = "✅ Marcada. Se ha buscado en internet (si hay conexión).";
+      el.textContent = "✅ Añadida a más explicación. Se ha buscado en internet (si hay conexión).";
     }
     el.style.display = "";
   }else{
@@ -1074,10 +1128,10 @@ function mostrarMasInfo(){
 }
 function pintarMasInfo(){
   const arr = cargarMasInfo();
-  $("i-resumen").textContent = "Marcadas: "+arr.length+"   ·   Preguntas que necesitan explicación más completa";
+  $("i-resumen").textContent = "En más explicación: "+arr.length+"   ·   Preguntas que necesitan explicación más completa";
   const lista = $("i-lista"); lista.innerHTML = "";
   if(arr.length === 0){
-    lista.innerHTML = "<div class='vacio'>No tienes preguntas marcadas. Durante un examen, pulsa "+
+    lista.innerHTML = "<div class='vacio'>No tienes preguntas en más explicación. Durante un examen, pulsa "+
       "\"❓ Más explicación\" en las preguntas que quieras entender mejor.</div>";
     return;
   }
@@ -1140,8 +1194,9 @@ function abrirReporte(conPregunta){
   const ctx = $("r-pregunta-ctx");
   if(q){
     ctx.style.display = "block";
-    ctx.innerHTML = "<b>Pregunta:</b> "+esc(q.pregunta)+"<br><b>Opciones:</b> "+
-      q.opciones.map((o,j)=>(j+1)+") "+esc(o)).join("  ")+
+    ctx.innerHTML = "<b>Pregunta:</b> "+esc(q.pregunta)+"<br>"+
+      "<b>Tema:</b> "+esc(TEMAS[q.tema])+" · <b>Nivel:</b> "+esc(NIVELES[q.nivel])+"<br>"+
+      "<b>Opciones:</b> "+q.opciones.map((o,j)=>(j+1)+") "+esc(o)).join("  ")+
       "<br><b>Respuesta correcta:</b> "+esc(q.opciones[q.correcta]);
   }else{
     ctx.style.display = "none";
@@ -1168,6 +1223,8 @@ function formatoReporte(r, n){
   let s = "REPORTE "+n+" — "+r.fecha+"\n";
   if(r.pregunta){
     s += "Pregunta: "+r.pregunta+"\n";
+    if(r.tema) s += "Tema: "+TEMAS[r.tema]+"\n";
+    if(r.nivel) s += "Nivel: "+NIVELES[r.nivel]+"\n";
     if(r.opciones) s += "Opciones: "+r.opciones.map((o,j)=>(j+1)+") "+o).join("  ")+"\n";
     s += "Respuesta correcta: "+r.correcta+"\n";
   }else{
@@ -1184,6 +1241,8 @@ function mostrarReportes(){
     lista.innerHTML = reportes.map((r,i)=>{
       const ctx = r.pregunta
         ? "<b>Pregunta:</b> "+esc(r.pregunta)+"<br>"+
+          (r.tema ? "<b>Tema:</b> "+esc(TEMAS[r.tema])+"<br>" : "")+
+          (r.nivel ? "<b>Nivel:</b> "+esc(NIVELES[r.nivel])+"<br>" : "")+
           (r.opciones ? "<b>Opciones:</b> "+r.opciones.map((o,j)=>(j+1)+") "+esc(o)).join("  ")+"<br>" : "")+
           "<b>Respuesta correcta:</b> "+esc(r.correcta)+"<br>"
         : "<b>Propuesta de pregunta nueva</b><br>";
@@ -1500,6 +1559,10 @@ if("speechSynthesis" in window){
 $("sel-voz").onchange = ()=>{
   try{ localStorage.setItem(CLAVE_VOZ, $("sel-voz").value); }catch(e){}
 };
+$("sel-vel").value = String(velocidadVoz());
+$("sel-vel").onchange = e=>{
+  try{ localStorage.setItem(CLAVE_VELOCIDAD, e.target.value); }catch(err){}
+};
 let vozauto = localStorage.getItem("alignerr-simulador-vozauto-v1") !== "0";
 function pintarVozAuto(){
   const b = $("btn-vozauto");
@@ -1582,6 +1645,7 @@ function iniciarReconocimiento(auto){
   rec.onresult = ev=>{
     okVoz = true;
     const t = norm((ev.results[0][0].transcript)||"");
+    if(t.includes("saltar") || t.includes("pasar") || t.includes("omitir")){ saltarPregunta(); return; }
     const nums = {"uno":0,"un":0,"1":0,"dos":1,"2":1,"tres":2,"3":2,"cuatro":3,"4":3};
     if(nums[t] !== undefined){ responder(nums[t]); return; }
     const m2 = t.match(/(?:opcion|letra|respuesta|la|el)\s*(uno|un|dos|tres|cuatro|[1234])/);
@@ -1636,14 +1700,9 @@ function escucharComando(){
       avanzarPregunta();
       return;
     }
-    if(t.includes("repetir") || t.includes("otra vez") || t.includes("repita")){
+    if(t.includes("repit") || t.includes("otra vez")){
       const q2 = E.preguntas[E.actual];
-      if(q2){
-        const texto = ultimaCorrecta
-          ? textoLeerPregunta(q2, false)+". ¡Correcto!"
-          : textoLeerPregunta(q2, true)+". "+$("q-feedback").textContent;
-        leerNuevo(texto, escucharComando);
-      }
+      if(q2) leerNuevo(textoLeerPregunta(q2, false), escucharComando);
       return;
     }
     if(t.includes("reportar") || t.includes("proponer") || t.includes("error")){
@@ -1675,6 +1734,140 @@ function escucharComando(){
   };
   rec.start();
 }
+function escucharResultados(){
+  if(!vozauto) return;
+  if(!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) return;
+  if(recVoz) return;
+  if(!$("pantalla-res").classList.contains("activa")) return;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const rec = new SR();
+  recVoz = rec;
+  rec.lang = "es-ES";
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
+  let okVoz = false, errVoz = false, reintento = false;
+  const norm = x=>String(x).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/equis/g,"x").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+  rec.onstart = ()=>{ pedirWakeLock(); };
+  rec.onresult = ev=>{
+    okVoz = true;
+    const t = norm((ev.results[0][0].transcript)||"");
+    if(t.includes("repasar") || t.includes("falladas")){ repasoFalladas(); return; }
+    if(t.includes("repetir") || t.includes("repit") || t.includes("otra vez") || t.includes("examen")){ iniciar(); return; }
+    if(t.includes("volver") || t.includes("menu") || t.includes("inicio")){ mostrar("pantalla-menu"); return; }
+    $("r-mensaje").textContent = "No te he entendido. Di volver al menú, repetir examen o repasar falladas.";
+    leerNuevo("No te he entendido. Di volver al menú, repetir examen o repasar falladas.", escucharResultados);
+  };
+  rec.onerror = ev=>{
+    if(ev.error === "no-speech"){
+      reintento = true;
+      recVoz = null; soltarWakeLock();
+      autoVozTimer = setTimeout(escucharResultados, 1500);
+      return;
+    }
+    errVoz = true;
+    if(ev.error === "not-allowed" || ev.error === "service-not-allowed"){
+      $("r-mensaje").textContent = "Permiso de micrófono denegado. Actívalo en los ajustes del navegador: Configuración de sitios, Micrófono.";
+      leerNuevo("Permiso de micrófono denegado. Actívalo en los ajustes del navegador, en Configuración de sitios, Micrófono.");
+    }
+    recVoz = null; soltarWakeLock();
+  };
+  rec.onend = ()=>{
+    recVoz = null; soltarWakeLock();
+    if(!okVoz && !errVoz && !reintento){
+      autoVozTimer = setTimeout(escucharResultados, 1500);
+    }
+  };
+  rec.start();
+}
+function repasoFalladas(){
+  repasoLista = E.respuestas.filter(r=>!r.ok);
+  if(repasoLista.length === 0){
+    leerNuevo("No hay preguntas falladas para repasar.");
+    return;
+  }
+  repasoIdx = 0;
+  mostrarRepaso();
+}
+function mostrarRepaso(){
+  const r = repasoLista[repasoIdx];
+  const q = r ? buscarEnBanco(r.pregunta) : null;
+  $("rep-p-progreso").textContent = "Repaso de falladas: "+(repasoIdx+1)+" de "+repasoLista.length;
+  $("rep-p-pregunta").textContent = r.pregunta;
+  $("rep-p-correcta").textContent = "Respuesta correcta: "+r.correcta;
+  $("rep-p-explicacion").textContent = q ? q.explicacion : "";
+  mostrar("pantalla-repaso");
+  const texto = "Repaso de falladas. Pregunta "+(repasoIdx+1)+" de "+repasoLista.length+". "+
+    r.pregunta+". Respuesta correcta: "+r.correcta+". "+(q ? q.explicacion : "");
+  leerNuevo(texto, escucharRepaso);
+}
+function repasoSiguiente(){
+  repasoIdx++;
+  if(repasoIdx >= repasoLista.length){
+    mostrar("pantalla-res");
+    leerNuevo("Fin del repaso de falladas.");
+  }else{
+    mostrarRepaso();
+  }
+}
+function escucharRepaso(){
+  if(!vozauto) return;
+  if(!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) return;
+  if(recVoz) return;
+  if(!$("pantalla-repaso").classList.contains("activa")) return;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const rec = new SR();
+  recVoz = rec;
+  rec.lang = "es-ES";
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
+  let okVoz = false, errVoz = false, reintento = false;
+  const norm = x=>String(x).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/equis/g,"x").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+  rec.onstart = ()=>{ pedirWakeLock(); };
+  rec.onresult = ev=>{
+    okVoz = true;
+    const t = norm((ev.results[0][0].transcript)||"");
+    if(t.includes("siguiente") || t.includes("adelante") || t.includes("continuar")){
+      repasoSiguiente();
+      return;
+    }
+    if(t.includes("repit") || t.includes("otra vez")){
+      const r = repasoLista[repasoIdx];
+      const q = r ? buscarEnBanco(r.pregunta) : null;
+      if(r){
+        const texto = r.pregunta+". Respuesta correcta: "+r.correcta+". "+(q ? q.explicacion : "");
+        leerNuevo(texto, escucharRepaso);
+      }
+      return;
+    }
+    if(t.includes("volver") || t.includes("salir") || t.includes("menu") || t.includes("resultados")){
+      mostrar("pantalla-res");
+      return;
+    }
+    leerNuevo("No te he entendido. Di siguiente, repetir o volver.", escucharRepaso);
+  };
+  rec.onerror = ev=>{
+    if(ev.error === "no-speech"){
+      reintento = true;
+      recVoz = null; soltarWakeLock();
+      autoVozTimer = setTimeout(escucharRepaso, 1500);
+      return;
+    }
+    errVoz = true;
+    if(ev.error === "not-allowed" || ev.error === "service-not-allowed"){
+      leerNuevo("Permiso de micrófono denegado. Actívalo en los ajustes del navegador, en Configuración de sitios, Micrófono.");
+    }
+    recVoz = null; soltarWakeLock();
+  };
+  rec.onend = ()=>{
+    recVoz = null; soltarWakeLock();
+    if(!okVoz && !errVoz && !reintento){
+      autoVozTimer = setTimeout(escucharRepaso, 1500);
+    }
+  };
+  rec.start();
+}
 function responderPorVoz(){
   if(bloqueoToques) return;
   if(recVoz){
@@ -1698,6 +1891,16 @@ function pararVoz(){
   soltarWakeLock();
 }
 $("btn-voz").onclick = responderPorVoz;
+$("btn-saltar").onclick = ()=>{
+  if(bloqueoToques) return;
+  saltarPregunta();
+};
+$("btn-repetir").onclick = ()=>{
+  if(bloqueoToques) return;
+  const q = E.preguntas[E.actual];
+  if(!q) return;
+  leerNuevo(textoLeerPregunta(q, false), escucharComando);
+};
 $("btn-pausa").onclick = ()=>{
   if(!("speechSynthesis" in window)) return;
   if(speechSynthesis.paused) speechSynthesis.resume();
@@ -1712,6 +1915,17 @@ $("btn-masinfo").onclick = ()=>{
   if(!ya) buscarEnInternet(q.pregunta, $("q-web"), null, q.subtema);
 };
 $("btn-volver").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-menu"); };
+$("btn-repetir-examen").onclick = ()=>{ iniciar(); };
+$("btn-repasar-falladas").onclick = ()=>{ repasoFalladas(); };
+$("btn-rep-leer").onclick = ()=>{
+  const r = repasoLista[repasoIdx];
+  const q = r ? buscarEnBanco(r.pregunta) : null;
+  if(!r) return;
+  const texto = r.pregunta+". Respuesta correcta: "+r.correcta+". "+(q ? q.explicacion : "");
+  leerNuevo(texto, escucharRepaso);
+};
+$("btn-rep-siguiente").onclick = ()=>{ repasoSiguiente(); };
+$("btn-rep-volver").onclick = ()=>{ mostrar("pantalla-res"); };
 $("btn-reportar").onclick = ()=>{ abrirReporte(true); };
 $("btn-reportar-menu").onclick = ()=>{ abrirReporte(false); };
 $("btn-reportes-menu").onclick = ()=>{ mostrarReportes(); };
@@ -1767,6 +1981,8 @@ $("btn-r-guardar").onclick = ()=>{
     pregunta: q ? q.pregunta : null,
     opciones: q ? q.opciones : null,
     correcta: q ? q.opciones[q.correcta] : null,
+    tema: q ? q.tema : null,
+    nivel: q ? q.nivel : null,
     texto: texto
   });
   guardarReportes(reportes);
@@ -1968,6 +2184,7 @@ function mostrarPregunta(){
   $("q-pregunta").textContent = q.pregunta;
   $("q-feedback").textContent = "";
   $("btn-siguiente").disabled = true;
+  const rb = $("btn-repetir"); if(rb) rb.style.display = "none";
   const w = $("q-web"); if(w){ w.style.display = "none"; w.textContent = ""; }
   $("btn-siguiente").textContent = (E.actual === total-1) ? "Ver resultados" : "Siguiente →";
 
@@ -2002,44 +2219,65 @@ function mostrarPregunta(){
     programarEscuchaAuto();
   }
 }
-function bloquearOpciones(correcta, elegida){
+function bloquearOpciones(elegida, ok){
   const btns = $("q-opciones").querySelectorAll("button");
   btns.forEach((b,i)=>{
     b.disabled = true;
-    if(i === correcta) b.className = "opcion ok";
-    else if(i === elegida) b.className = "opcion bad";
+    if(i === elegida) b.className = ok ? "opcion ok" : "opcion bad";
   });
+}
+function ofrecerRepetir(){
+  const idx = E.actual;
+  setTimeout(()=>{
+    if(E.actual !== idx) return;
+    if(!E.respondidas.has(idx)) return;
+    if(!$("pantalla-quiz").classList.contains("activa")) return;
+    const rb = $("btn-repetir");
+    if(rb) rb.style.display = "";
+    escucharComando();
+  }, 3000);
 }
 function responder(idx){
   pararVoz();
   if(E.tipoTimer === "pregunta") cancelarTimer();
   const q = E.preguntas[E.actual], correcta = q.correcta;
-  bloquearOpciones(correcta, idx);
-  if(idx === correcta){
+  const ok = idx === correcta;
+  bloquearOpciones(idx, ok);
+  if(ok){
     E.aciertos++;
     $("q-feedback").textContent = "✓ ¡Correcto!  "+q.explicacion;
     $("q-feedback").style.color = OK;
   }else{
-    $("q-feedback").textContent = "✗ Incorrecto. Respuesta correcta: "+q.opciones[correcta]+".  "+q.explicacion;
+    $("q-feedback").textContent = "✗ Incorrecto.";
     $("q-feedback").style.color = BAD;
   }
   E.respuestas.push({idx:E.actual, pregunta:q.pregunta, tema:q.tema, nivel:q.nivel,
-                     elegida:q.opciones[idx], correcta:q.opciones[correcta], ok:idx===correcta});
+                     elegida:q.opciones[idx], correcta:q.opciones[correcta], ok});
   E.respondidas.add(E.actual);
-  ultimaCorrecta = (idx === correcta);
+  ultimaCorrecta = ok;
   $("q-puntos").textContent = "Aciertos: "+E.aciertos;
   $("btn-siguiente").disabled = false;
   if(vozauto){
-    const fb = ultimaCorrecta ? "¡Correcto!" : $("q-feedback").textContent;
-    leerNuevo(fb, escucharComando);
+    if(ok){
+      const idxRespondida = E.actual;
+      leerNuevo("¡Correcto!", ()=>{
+        setTimeout(()=>{
+          if(E.actual === idxRespondida && $("pantalla-quiz").classList.contains("activa")) avanzarPregunta();
+        }, 1500);
+      });
+    }else{
+      const texto = "Incorrecto. Las opciones son: "+
+        q.opciones.map((o,i)=>["uno","dos","tres","cuatro"][i]+": "+expandirTexto(o)).join(". ")+".";
+      leerNuevo(texto, ofrecerRepetir);
+    }
   }
 }
 function tiempoAgotado(){
   pararVoz();
   cancelarTimer();
   const q = E.preguntas[E.actual], correcta = q.correcta;
-  bloquearOpciones(correcta, -1);
-  $("q-feedback").textContent = "⏱ Tiempo agotado. Respuesta correcta: "+q.opciones[correcta]+".  "+q.explicacion;
+  bloquearOpciones(-1, false);
+  $("q-feedback").textContent = "⏱ Tiempo agotado.";
   $("q-feedback").style.color = BAD;
   E.respuestas.push({idx:E.actual, pregunta:q.pregunta, tema:q.tema, nivel:q.nivel,
                      elegida:"⏱ Sin responder", correcta:q.opciones[correcta], ok:false});
@@ -2047,9 +2285,21 @@ function tiempoAgotado(){
   ultimaCorrecta = false;
   $("btn-siguiente").disabled = false;
   if(vozauto){
-    const fb = $("q-feedback").textContent;
-    leerNuevo(fb, escucharComando);
+    const texto = "Tiempo agotado. Las opciones son: "+
+      q.opciones.map((o,i)=>["uno","dos","tres","cuatro"][i]+": "+expandirTexto(o)).join(". ")+".";
+    leerNuevo(texto, ofrecerRepetir);
   }
+}
+function saltarPregunta(){
+  pararVoz();
+  if(E.tipoTimer === "pregunta") cancelarTimer();
+  const q = E.preguntas[E.actual];
+  if(!q || E.respondidas.has(E.actual)) return;
+  E.respuestas.push({idx:E.actual, pregunta:q.pregunta, tema:q.tema, nivel:q.nivel,
+                     elegida:"⏭ Saltada", correcta:q.opciones[q.correcta], ok:false});
+  E.respondidas.add(E.actual);
+  ultimaCorrecta = false;
+  avanzarPregunta();
 }
 function finalizarPorTiempo(){
   cancelarTimer(); E.agotadoTotal = true;
@@ -2139,6 +2389,8 @@ function mostrarResultados(){
     rev.appendChild(div);
   });
   mostrar("pantalla-res");
+  const titulo = E.agotadoTotal ? "Tiempo agotado" : "Examen completado";
+  leerNuevo(titulo+". Has acertado "+E.aciertos+" de "+total+". Porcentaje "+pct+" por ciento. "+msg, escucharResultados);
 }
 
 /* ========================== ESTADÍSTICAS ========================== */
