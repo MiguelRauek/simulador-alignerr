@@ -289,7 +289,7 @@
         <button class="secundario" id="btn-reportes-menu">📋 Reportes (0)</button>
       </div>
       <p class="nota">Las preguntas se eligen al azar y las opciones se barajan en cada intento.</p>
-      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.20</span></p>
+      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.21</span></p>
     </div>
   </div>
 </section>
@@ -490,7 +490,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.20";
+const VERSION = "2.21";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -708,6 +708,7 @@ let bloqueoToques = false; // ignora toques justo tras desbloquear la pantalla
 let wakeLock = null;
 let ultimaCorrecta = false; // si la última respuesta fue correcta (para acortar lecturas)
 let repasoLista = [], repasoIdx = 0; // repaso de falladas desde resultados
+let esperandoRepasoOferta = false;   // si la voz está preguntando "¿repasamos las falladas?"
 let reportes = JSON.parse(localStorage.getItem("alignerr-simulador-reportes-v1") || "[]");
 let reportePregunta = null;   // pregunta que se está reportando (o null si es propuesta nueva)
 let reporteDesdeQuiz = false; // si el panel se abrió desde el examen
@@ -1721,6 +1722,16 @@ function escucharComando(){
   rec.onresult = ev=>{
     okVoz = true;
     const t = norm((ev.results[0][0].transcript)||"");
+    if(t.includes("cuantas") || t.includes("cuantos") || t.includes("llevo") ||
+       t.includes("como voy") || t.includes("puntos") || t.includes("marcador") || t.includes("aciertos")){
+      const resp = E.respondidas.size;
+      const fall = resp - E.aciertos;
+      const texto = "Llevas "+E.aciertos+" aciertos de "+resp+" respondidas. "+
+                    (fall>0 ? fall+" falladas." : "Ninguna fallada.");
+      $("q-feedback").textContent = "📊 "+texto;
+      leerNuevo(texto, escucharComando);
+      return;
+    }
     if(t.includes("siguiente") || t.includes("adelante") || t.includes("continuar")){
       avanzarPregunta();
       return;
@@ -1735,8 +1746,8 @@ function escucharComando(){
       abrirReporte(true);
       return;
     }
-    $("q-feedback").textContent = "No te he entendido. Di siguiente o repetir.";
-    leerNuevo("No te he entendido. Di siguiente o repetir.", escucharComando);
+    $("q-feedback").textContent = "No te he entendido. Di siguiente, repetir o cuántas llevo.";
+    leerNuevo("No te he entendido. Di siguiente, repetir o cuántas llevo.", escucharComando);
   };
   rec.onerror = ev=>{
     if(ev.error === "no-speech"){
@@ -1778,6 +1789,24 @@ function escucharResultados(){
   rec.onresult = ev=>{
     okVoz = true;
     const t = norm((ev.results[0][0].transcript)||"");
+    if(esperandoRepasoOferta){
+      if(t.includes("repetir") || t.includes("repit") || t.includes("otra vez") || t.includes("examen")){
+        esperandoRepasoOferta = false; iniciar(); return;
+      }
+      if(t.includes("volver") || t.includes("menu") || t.includes("inicio")){
+        esperandoRepasoOferta = false; mostrar("pantalla-menu"); return;
+      }
+      if(t.includes("repasar") || t.includes("falladas") || /(^| )si( |$)/.test(t)){
+        esperandoRepasoOferta = false; repasoFalladas(); return;
+      }
+      if(/(^| )no( |$)/.test(t)){
+        esperandoRepasoOferta = false;
+        leerNuevo("De acuerdo. Di volver al menú, repetir examen o repasar falladas.", escucharResultados);
+        return;
+      }
+      leerNuevo("No te he entendido. ¿Quieres repasar las falladas? Di sí o no.", escucharResultados);
+      return;
+    }
     if(t.includes("repasar") || t.includes("falladas")){ repasoFalladas(); return; }
     if(t.includes("repetir") || t.includes("repit") || t.includes("otra vez") || t.includes("examen")){ iniciar(); return; }
     if(t.includes("volver") || t.includes("menu") || t.includes("inicio")){ mostrar("pantalla-menu"); return; }
@@ -2147,6 +2176,16 @@ function tick(){
   if(E.tipoTimer === "total"){
     E.tiempoTotalRestante--; actualizarTimerLabel();
     if(E.tiempoTotalRestante <= 0){ finalizarPorTiempo(); }
+    else if(E.tiempoTotalRestante === 300 || E.tiempoTotalRestante === 120 || E.tiempoTotalRestante === 60){
+      if(!E.avisosTiempo) E.avisosTiempo = new Set();
+      if(!E.avisosTiempo.has(E.tiempoTotalRestante)){
+        E.avisosTiempo.add(E.tiempoTotalRestante);
+        if(vozauto){
+          const min = E.tiempoTotalRestante/60;
+          leerNuevo(min === 1 ? "Queda 1 minuto." : "Quedan "+min+" minutos.", null);
+        }
+      }
+    }
   }else{
     E.tiempoRestante--; actualizarTimerLabel();
     if(E.tiempoRestante <= 0){ tiempoAgotado(); }
@@ -2183,6 +2222,7 @@ function iniciar(){
   const n = Math.min(E.num, poolFiltrado.length);
   E.preguntas = seleccionarPreguntas(poolFiltrado, n);
   E.actual=0; E.aciertos=0; E.respuestas=[]; E.respondidas=new Set(); E.agotadoTotal=false;
+  E.avisosTiempo = new Set(); esperandoRepasoOferta = false;
   cancelarTimer(); parsearTemporizador();
   if(E.tipoTimer === "total") E.tiempoTotalRestante = E.minutosTotal*60;
   mostrar("pantalla-quiz");
@@ -2252,6 +2292,30 @@ function bloquearOpciones(correcta, elegida){
     if(i === elegida && i !== correcta) b.className = "opcion bad";
   });
 }
+/* ============================== SONIDOS ============================== */
+let audioCtx = null;
+function tocarTono(frecs, dur, tipo){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state === "suspended") audioCtx.resume();
+    const t0 = audioCtx.currentTime + 0.02;
+    frecs.forEach((f,i)=>{
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = tipo || "sine";
+      o.frequency.value = f;
+      const t1 = t0 + i*dur;
+      g.gain.setValueAtTime(0.0001, t1);
+      g.gain.exponentialRampToValueAtTime(0.25, t1+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t1+dur);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t1); o.stop(t1+dur+0.05);
+    });
+  }catch(e){}
+}
+function sonidoAcierto(){ tocarTono([880, 1318.5], 0.16, "sine"); }
+function sonidoFallo(){ tocarTono([220, 174.6], 0.22, "sawtooth"); }
+
 function responder(idx){
   pararVoz();
   if(E.tipoTimer === "pregunta") cancelarTimer();
@@ -2260,9 +2324,11 @@ function responder(idx){
   bloquearOpciones(correcta, idx);
   if(ok){
     E.aciertos++;
+    sonidoAcierto();
     $("q-feedback").textContent = "✓ ¡Correcto!  "+q.explicacion;
     $("q-feedback").style.color = OK;
   }else{
+    sonidoFallo();
     $("q-feedback").textContent = "✗ Incorrecto. Respuesta correcta: "+q.opciones[correcta]+".  "+q.explicacion;
     $("q-feedback").style.color = BAD;
   }
@@ -2294,6 +2360,7 @@ function tiempoAgotado(){
   cancelarTimer();
   const q = E.preguntas[E.actual], correcta = q.correcta;
   bloquearOpciones(correcta, -1);
+  sonidoFallo();
   $("q-feedback").textContent = "⏱ Tiempo agotado. Respuesta correcta: "+q.opciones[correcta]+".  "+q.explicacion;
   $("q-feedback").style.color = BAD;
   E.respuestas.push({idx:E.actual, pregunta:q.pregunta, tema:q.tema, nivel:q.nivel,
@@ -2403,7 +2470,15 @@ function mostrarResultados(){
   });
   mostrar("pantalla-res");
   const titulo = E.agotadoTotal ? "Tiempo agotado" : "Examen completado";
-  leerNuevo(titulo+". Has acertado "+E.aciertos+" de "+total+". Porcentaje "+pct+" por ciento. "+msg, escucharResultados);
+  const base = titulo+". Has acertado "+E.aciertos+" de "+total+". Porcentaje "+pct+" por ciento. "+msg;
+  const nFalladas = E.respuestas.filter(r=>!r.ok).length;
+  if(vozauto && nFalladas > 0){
+    esperandoRepasoOferta = true;
+    leerNuevo(base+". Tienes "+nFalladas+" falladas. ¿Quieres repasarlas ahora? Di sí o no.", escucharResultados);
+  }else{
+    esperandoRepasoOferta = false;
+    leerNuevo(base, escucharResultados);
+  }
 }
 
 /* ========================== ESTADÍSTICAS ========================== */
