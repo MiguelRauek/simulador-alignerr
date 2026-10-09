@@ -289,7 +289,7 @@
         <button class="secundario" id="btn-reportes-menu">📋 Reportes (0)</button>
       </div>
       <p class="nota">Las preguntas se eligen al azar y las opciones se barajan en cada intento.</p>
-      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.19</span></p>
+      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.20</span></p>
     </div>
   </div>
 </section>
@@ -490,7 +490,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.19";
+const VERSION = "2.20";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -914,6 +914,28 @@ async function buscarEnInternet(pregunta, zona, btn, subtema){
     if(btn) btn.disabled = false;
   }
 }
+function preguntarAsistente(q){
+  const texto = q.pregunta;
+  const w = $("q-web");
+  if(w){ w.style.display = ""; w.textContent = "🤖 Pregunta enviada al asistente de Google:\n"+texto; }
+  leerNuevo("Abriendo el asistente de Google con la pregunta.");
+  if(/Android/i.test(navigator.userAgent)){
+    // Intent de Android: abre el asistente por defecto (Google/Gemini) con el texto
+    const intent = "intent:#Intent;action=android.intent.action.ASSIST;S.query="+
+                   encodeURIComponent(texto)+";end";
+    try{
+      const a = document.createElement("a");
+      a.href = intent;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>{ a.remove(); }, 1500);
+      return;
+    }catch(e){}
+  }
+  // Respaldo (no Android o intent fallido): abrir Google con la pregunta
+  window.open("https://www.google.com/search?q="+encodeURIComponent(texto), "_blank");
+}
 function numeroAPalabras(n){
   n = Math.trunc(n);
   if(n < 0) return "menos "+numeroAPalabras(-n);
@@ -1117,7 +1139,7 @@ function mostrarMasInfoEnQuiz(q){
     if(q.ext){
       el.textContent = "📖 Explicación ampliada: "+q.ext;
     }else{
-      el.textContent = "✅ Añadida a más explicación. Se ha buscado en internet (si hay conexión).";
+      el.textContent = "✅ Añadida a más explicación. Pregunta enviada al asistente de Google.";
     }
     el.style.display = "";
   }else{
@@ -1162,9 +1184,9 @@ function pintarMasInfo(){
       leer(textoLeerPregunta(q, true)+(q.ext?(" "+expandirTexto(q.ext, true)):""), leerB);
     };
     const webB = document.createElement("button"); webB.className="secundario";
-    webB.textContent = "🔎 Buscar";
+    webB.textContent = "🤖 Preguntar a Google";
     const webRes = document.createElement("div"); webRes.className="web-res"; webRes.style.display="none";
-    webB.onclick = ()=>{ buscarEnInternet(pregunta, webRes, webB, q.subtema); };
+    webB.onclick = ()=>{ preguntarAsistente(q); };
     const quitar = document.createElement("button"); quitar.className="peligro";
     quitar.textContent = "Quitar";
     quitar.onclick = ()=>quitarDeMasInfo(pregunta);
@@ -1910,7 +1932,7 @@ $("btn-masinfo").onclick = ()=>{
   if(!q) return;
   const ya = enMasInfo(q.pregunta);
   marcarMasInfo(q);
-  if(!ya) buscarEnInternet(q.pregunta, $("q-web"), null, q.subtema);
+  preguntarAsistente(q);
 };
 $("btn-volver").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-menu"); };
 $("btn-repetir-examen").onclick = ()=>{ iniciar(); };
@@ -2252,13 +2274,20 @@ function responder(idx){
   $("btn-siguiente").disabled = false;
   if(ok){
     const idxRespondida = E.actual;
-    if(vozauto) leerNuevo("¡Correcto!");
-    setTimeout(()=>{
-      if(E.actual === idxRespondida && $("pantalla-quiz").classList.contains("activa")) avanzarPregunta();
-    }, 2000);
+    const texto = "¡Correcto! "+q.explicacion;
+    if(vozauto){
+      leerNuevo(texto, ()=>{ avanzarSiSigue(idxRespondida); });
+      // Respaldo: si el navegador no avisa del final de la lectura, avanzar igualmente
+      setTimeout(()=>{ avanzarSiSigue(idxRespondida); }, Math.max(3000, texto.length*70));
+    }else{
+      setTimeout(()=>{ avanzarSiSigue(idxRespondida); }, 2000);
+    }
   }else{
     if(vozauto) leerNuevo($("q-feedback").textContent, escucharComando);
   }
+}
+function avanzarSiSigue(idx){
+  if(E.actual === idx && $("pantalla-quiz").classList.contains("activa")) avanzarPregunta();
 }
 function tiempoAgotado(){
   pararVoz();
