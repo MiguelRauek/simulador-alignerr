@@ -65,6 +65,12 @@
     border:1.5px solid var(--accent);border-radius:11px;padding:8px 10px;
     font-size:1.05rem;font-weight:700;text-align:center;min-width:0;}
   input[type=number]::placeholder{color:#9a9ab0;font-style:italic;font-size:.85rem;font-weight:400;opacity:.85;}
+  input[type=text],input[type=password]{flex:1;background:var(--card2);color:var(--text);
+    border:1.5px solid var(--accent);border-radius:11px;padding:8px 10px;
+    font-size:.95rem;min-width:0;}
+  input[type=text]::placeholder,input[type=password]::placeholder{color:#9a9ab0;font-style:italic;font-size:.85rem;opacity:.85;}
+  #q-web.globo-ia,.web-res.globo-ia{background:#141414;color:#f2f2f2;border:1px solid #3a3a3a;
+    border-radius:14px;padding:12px 14px;margin-top:8px;}
   .num-val{font-weight:700;font-size:.9rem;color:var(--sub);white-space:nowrap;}
 
   /* ---- Select temporizador ---- */
@@ -258,6 +264,13 @@
         <select id="sel-voz" style="flex:1"></select>
       </div>
       <div class="fila" style="margin-top:6px">
+        <button class="rect" id="btn-probar-voz" style="--c:#60a5fa">🔊 Probar la voz elegida</button>
+      </div>
+      <div class="fila" style="margin-top:6px">
+        <label for="inp-gemini" style="flex:0 0 auto;color:var(--sub);font-size:.85rem;align-self:center">🔑 Gemini:</label>
+        <input type="password" id="inp-gemini" placeholder="Pega aquí tu clave de Gemini (opcional)" autocomplete="off">
+      </div>
+      <div class="fila" style="margin-top:6px">
         <label for="sel-vel" style="flex:0 0 auto;color:var(--sub);font-size:.85rem;align-self:center">🐢 Velocidad:</label>
         <select id="sel-vel" style="flex:1">
           <option value="0.8">Lenta</option>
@@ -389,6 +402,7 @@
     </div>
     <div class="fila-botones">
       <button class="secundario" id="btn-rep-leer">🔊 Leer</button>
+      <button class="secundario" id="btn-rep-desafio">⚔️ Añadir al Desafío</button>
       <button class="secundario" id="btn-rep-siguiente">Siguiente →</button>
       <button class="secundario" id="btn-rep-volver">← Volver</button>
     </div>
@@ -493,7 +507,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.22";
+const VERSION = "2.23";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -787,7 +801,7 @@ function vozElegida(){
     const voces = speechSynthesis.getVoices();
     if(n){
       const v = voces.find(v=>v.name===n);
-      if(v && esVozEspana(v)) return v;
+      if(v) return v; // respetar CUALQUIER voz elegida (antes solo valía España)
     }
     return voces.find(esVozEspana) ||
            voces.find(v=>v.lang && v.lang.toLowerCase().startsWith("es")) || null;
@@ -918,29 +932,57 @@ async function buscarEnInternet(pregunta, zona, btn, subtema){
     if(btn) btn.disabled = false;
   }
 }
-function preguntarAsistente(q){
-  const texto = q.pregunta;
-  const w = $("q-web");
-  if(w){ w.style.display = ""; w.textContent = "🤖 Pregunta enviada a Gemini:\n"+texto; }
-  leerNuevo("Abriendo Gemini con la pregunta.");
-  // Enlace profundo de Gemini: rellena la pregunta en el cuadro de texto
-  const url = "https://gemini.google.com/app?prompt="+encodeURIComponent(texto);
-  if(/Android/i.test(navigator.userAgent)){
-    // Intent directo de la app Gemini (com.google.android.apps.bard);
-    // si la app no está instalada, el navegador abre el enlace (Gemini web)
-    const intent = "intent:#Intent;action=android.intent.action.VIEW;package=com.google.android.apps.bard;"+
-                   "S.browser_fallback_url="+encodeURIComponent(url)+";end";
-    try{
-      const a = document.createElement("a");
-      a.href = intent;
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(()=>{ a.remove(); }, 1500);
-      return;
-    }catch(e){}
+const CLAVE_GEMINI = "alignerr-simulador-gemini-key-v1";
+function geminiKey(){
+  try{ return (localStorage.getItem(CLAVE_GEMINI)||"").trim(); }catch(e){ return ""; }
+}
+// Muestra la explicación DENTRO de la app, sin abrir ninguna ventana.
+// Si hay clave de Gemini, se la pide a Gemini; si no, usa Wikipedia (como antes).
+async function explicarConGemini(q, zona, btn){
+  if(!zona) return;
+  zona.style.display = "";
+  const key = geminiKey();
+  if(!key){
+    zona.classList.remove("globo-ia");
+    return buscarEnInternet(q.pregunta, zona, btn, q.subtema);
   }
-  window.open(url, "_blank");
+  zona.classList.add("globo-ia");
+  zona.textContent = "🤖 Buscando la explicación en Gemini...";
+  if(btn) btn.disabled = true;
+  const ctrl = new AbortController();
+  const t = setTimeout(()=>ctrl.abort(), 20000);
+  try{
+    const prompt = "Explica de forma breve y clara, en español, la respuesta a esta pregunta de un test: \""+
+      q.pregunta+"\". Da la explicación en 2 o 3 frases sencillas.";
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+
+      encodeURIComponent(key);
+    const r = await fetch(url, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({contents:[{parts:[{text:prompt}]}]}),
+      signal: ctrl.signal
+    });
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const d = await r.json();
+    const cand = d.candidates && d.candidates[0];
+    const txt = (cand && cand.content && cand.content.parts)
+      ? cand.content.parts.map(p=>p.text||"").join(" ").trim() : "";
+    if(!txt) throw new Error("sin respuesta");
+    const texto = "🤖 Gemini: "+txt;
+    zona.textContent = texto;
+    leerNuevo(expandirTexto(texto, true));
+  }catch(e){
+    zona.textContent = "⚠ No se pudo obtener la explicación de Gemini. Revisa tu clave en Ajustes y la conexión.";
+    const rb = document.createElement("button");
+    rb.className = "secundario"; rb.style.marginTop = "6px";
+    rb.textContent = "🔄 Reintentar";
+    rb.onclick = ()=>{ explicarConGemini(q, zona, btn); };
+    zona.appendChild(document.createElement("br"));
+    zona.appendChild(rb);
+  }finally{
+    clearTimeout(t);
+    if(btn) btn.disabled = false;
+  }
 }
 function numeroAPalabras(n){
   n = Math.trunc(n);
@@ -1190,9 +1232,9 @@ function pintarMasInfo(){
       leer(textoLeerPregunta(q, true)+(q.ext?(" "+expandirTexto(q.ext, true)):""), leerB);
     };
     const webB = document.createElement("button"); webB.className="secundario";
-    webB.textContent = "🤖 Preguntar a Google";
+    webB.textContent = "🤖 Preguntar a Gemini";
     const webRes = document.createElement("div"); webRes.className="web-res"; webRes.style.display="none";
-    webB.onclick = ()=>{ preguntarAsistente(q); };
+    webB.onclick = ()=>{ explicarConGemini(q, webRes, webB); };
     const quitar = document.createElement("button"); quitar.className="peligro";
     quitar.textContent = "Quitar";
     quitar.onclick = ()=>quitarDeMasInfo(pregunta);
@@ -1590,6 +1632,18 @@ if("speechSynthesis" in window){
 $("sel-voz").onchange = ()=>{
   try{ localStorage.setItem(CLAVE_VOZ, $("sel-voz").value); }catch(e){}
 };
+$("btn-probar-voz").onclick = ()=>{
+  const v = vozElegida();
+  leerNuevo("Probando la voz: "+(v ? v.name : "la voz por defecto")+". Así se leerán las preguntas.");
+};
+const inpG = $("inp-gemini");
+if(inpG){
+  inpG.value = geminiKey();
+  inpG.onchange = ()=>{
+    try{ localStorage.setItem(CLAVE_GEMINI, inpG.value.trim()); }catch(e){}
+    leerNuevo(inpG.value.trim() ? "Clave de Gemini guardada." : "Clave de Gemini borrada.");
+  };
+}
 $("sel-vel").value = String(velocidadVoz());
 $("sel-vel").onchange = e=>{
   try{ localStorage.setItem(CLAVE_VELOCIDAD, e.target.value); }catch(err){}
@@ -1849,6 +1903,19 @@ function repasoFalladas(){
   repasoIdx = 0;
   mostrarRepaso();
 }
+function actualizarBotonRepDesafio(){
+  const b = $("btn-rep-desafio");
+  if(!b) return;
+  const r = repasoLista[repasoIdx];
+  const q = r ? buscarEnBanco(r.pregunta) : null;
+  if(q && enDesafio(q.pregunta)){
+    b.textContent = "⭐ En Desafío — quitar";
+    b.classList.add("en-desafio");
+  }else{
+    b.textContent = "⚔️ Añadir al Desafío";
+    b.classList.remove("en-desafio");
+  }
+}
 function mostrarRepaso(){
   const r = repasoLista[repasoIdx];
   const q = r ? buscarEnBanco(r.pregunta) : null;
@@ -1856,6 +1923,7 @@ function mostrarRepaso(){
   $("rep-p-pregunta").textContent = r.pregunta;
   $("rep-p-correcta").textContent = "Respuesta correcta: "+r.correcta;
   $("rep-p-explicacion").textContent = q ? q.explicacion : "";
+  actualizarBotonRepDesafio();
   mostrar("pantalla-repaso");
   const texto = "Repaso de falladas. Pregunta "+(repasoIdx+1)+" de "+repasoLista.length+". "+
     r.pregunta+". Respuesta correcta: "+r.correcta+". "+(q ? q.explicacion : "");
@@ -1966,7 +2034,7 @@ $("btn-masinfo").onclick = ()=>{
   if(!q) return;
   const ya = enMasInfo(q.pregunta);
   marcarMasInfo(q);
-  preguntarAsistente(q);
+  explicarConGemini(q, $("q-web"), $("btn-masinfo"));
 };
 $("btn-volver").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-menu"); };
 $("btn-repetir-examen").onclick = ()=>{ iniciar(); };
@@ -1979,6 +2047,15 @@ $("btn-rep-leer").onclick = ()=>{
   leerNuevo(texto, escucharRepaso);
 };
 $("btn-rep-siguiente").onclick = ()=>{ repasoSiguiente(); };
+$("btn-rep-desafio").onclick = ()=>{
+  const r = repasoLista[repasoIdx];
+  const q = r ? buscarEnBanco(r.pregunta) : null;
+  if(!q){ leerNuevo("No se encontró la pregunta."); return; }
+  const ya = enDesafio(q.pregunta);
+  marcarDesafio(q);
+  actualizarBotonRepDesafio();
+  leerNuevo(ya ? "Quitada del Desafío." : "Añadida al Desafío. Aparecerá cinco veces más en los exámenes.");
+};
 $("btn-rep-volver").onclick = ()=>{ mostrar("pantalla-res"); };
 $("btn-reportar").onclick = ()=>{ abrirReporte(true); };
 $("btn-reportar-menu").onclick = ()=>{ abrirReporte(false); };
