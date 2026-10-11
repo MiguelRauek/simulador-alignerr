@@ -271,6 +271,9 @@
         <input type="password" id="inp-gemini" placeholder="Pega aquí tu clave de Gemini (opcional)" autocomplete="off">
       </div>
       <div class="fila" style="margin-top:6px">
+        <button class="rect" id="btn-guardar-gemini" style="--c:#f59e0b">💾 Guardar clave de Gemini</button>
+      </div>
+      <div class="fila" style="margin-top:6px">
         <label for="sel-vel" style="flex:0 0 auto;color:var(--sub);font-size:.85rem;align-self:center">🐢 Velocidad:</label>
         <select id="sel-vel" style="flex:1">
           <option value="0.8">Lenta</option>
@@ -305,7 +308,7 @@
         <button class="secundario" id="btn-reportes-menu">📋 Reportes (0)</button>
       </div>
       <p class="nota">Las preguntas se eligen al azar y las opciones se barajan en cada intento.</p>
-      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num">2.22</span></p>
+      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num"></span></p>
     </div>
   </div>
 </section>
@@ -507,7 +510,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.23";
+const VERSION = "2.24";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -938,6 +941,7 @@ function geminiKey(){
 }
 // Muestra la explicación DENTRO de la app, sin abrir ninguna ventana.
 // Si hay clave de Gemini, se la pide a Gemini; si no, usa Wikipedia (como antes).
+const GEMINI_MODELOS = ["gemini-3.1-flash-lite","gemini-3.8-flash","gemini-2.5-flash"];
 async function explicarConGemini(q, zona, btn){
   if(!zona) return;
   zona.style.display = "";
@@ -949,40 +953,64 @@ async function explicarConGemini(q, zona, btn){
   zona.classList.add("globo-ia");
   zona.textContent = "🤖 Buscando la explicación en Gemini...";
   if(btn) btn.disabled = true;
-  const ctrl = new AbortController();
-  const t = setTimeout(()=>ctrl.abort(), 20000);
+  const prompt = "Explica de forma breve y clara, en español, la respuesta a esta pregunta de un test: \""+
+    q.pregunta+"\". Da la explicación en 2 o 3 frases sencillas.";
+  let motivo = "conexion";
   try{
-    const prompt = "Explica de forma breve y clara, en español, la respuesta a esta pregunta de un test: \""+
-      q.pregunta+"\". Da la explicación en 2 o 3 frases sencillas.";
-    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+
-      encodeURIComponent(key);
-    const r = await fetch(url, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({contents:[{parts:[{text:prompt}]}]}),
-      signal: ctrl.signal
-    });
-    if(!r.ok) throw new Error("HTTP "+r.status);
-    const d = await r.json();
-    const cand = d.candidates && d.candidates[0];
-    const txt = (cand && cand.content && cand.content.parts)
-      ? cand.content.parts.map(p=>p.text||"").join(" ").trim() : "";
-    if(!txt) throw new Error("sin respuesta");
-    const texto = "🤖 Gemini: "+txt;
-    zona.textContent = texto;
-    leerNuevo(expandirTexto(texto, true));
-  }catch(e){
-    zona.textContent = "⚠ No se pudo obtener la explicación de Gemini. Revisa tu clave en Ajustes y la conexión.";
-    const rb = document.createElement("button");
-    rb.className = "secundario"; rb.style.marginTop = "6px";
-    rb.textContent = "🔄 Reintentar";
-    rb.onclick = ()=>{ explicarConGemini(q, zona, btn); };
-    zona.appendChild(document.createElement("br"));
-    zona.appendChild(rb);
+    for(const modelo of GEMINI_MODELOS){
+      const ctrl = new AbortController();
+      const t = setTimeout(()=>ctrl.abort(), 20000);
+      try{
+        const url = "https://generativelanguage.googleapis.com/v1beta/models/"+modelo+
+          ":generateContent?key="+encodeURIComponent(key);
+        const r = await fetch(url, {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({contents:[{parts:[{text:prompt}]}]}),
+          signal: ctrl.signal
+        });
+        if(r.status===400 || r.status===401 || r.status===403){
+          const cuerpo = await r.text();
+          motivo = /api[_ ]?key/i.test(cuerpo) ? "clave" : "rechazo";
+          break;
+        }
+        if(r.status===429){ motivo = "limite"; break; }
+        if(!r.ok) continue; // modelo no disponible: probamos el siguiente
+        const d = await r.json();
+        const cand = d.candidates && d.candidates[0];
+        const txt = (cand && cand.content && cand.content.parts)
+          ? cand.content.parts.map(p=>p.text||"").join(" ").trim() : "";
+        if(!txt) continue;
+        const texto = "🤖 Gemini: "+txt;
+        zona.textContent = texto;
+        leerNuevo(expandirTexto(texto, true));
+        return;
+      }catch(err){
+        motivo = (err && err.name==="AbortError") ? "tiempo" : "conexion";
+        continue;
+      }finally{
+        clearTimeout(t);
+      }
+    }
   }finally{
-    clearTimeout(t);
     if(btn) btn.disabled = false;
   }
+  const avisos = {
+    clave:    "⚠ La clave de Gemini no es válida. Cópiala otra vez, completa, en Ajustes.",
+    rechazo:  "⚠ Gemini ha rechazado la petición. Revisa tu clave en Ajustes.",
+    limite:   "⚠ Gemini está muy pedido ahora mismo. Prueba otra vez en un momento.",
+    tiempo:   "⚠ Gemini tarda demasiado. Prueba otra vez.",
+    conexion: "⚠ No hay conexión con Gemini. Mira tu internet y prueba otra vez."
+  };
+  const aviso = avisos[motivo] || "⚠ Ahora mismo Gemini no responde. Prueba otra vez en un rato.";
+  zona.textContent = aviso;
+  const rb = document.createElement("button");
+  rb.className = "secundario"; rb.style.marginTop = "6px";
+  rb.textContent = "🔄 Reintentar";
+  rb.onclick = ()=>{ explicarConGemini(q, zona, btn); };
+  zona.appendChild(document.createElement("br"));
+  zona.appendChild(rb);
+  leerNuevo(aviso);
 }
 function numeroAPalabras(n){
   n = Math.trunc(n);
@@ -1637,13 +1665,21 @@ $("btn-probar-voz").onclick = ()=>{
   leerNuevo("Probando la voz: "+(v ? v.name : "la voz por defecto")+". Así se leerán las preguntas.");
 };
 const inpG = $("inp-gemini");
+function guardarClaveGemini(avisar){
+  if(!inpG) return;
+  const v = inpG.value.trim();
+  try{ localStorage.setItem(CLAVE_GEMINI, v); }catch(e){}
+  if(avisar) leerNuevo(v ? "Clave de Gemini guardada." : "Clave de Gemini borrada.");
+}
 if(inpG){
   inpG.value = geminiKey();
-  inpG.onchange = ()=>{
-    try{ localStorage.setItem(CLAVE_GEMINI, inpG.value.trim()); }catch(e){}
-    leerNuevo(inpG.value.trim() ? "Clave de Gemini guardada." : "Clave de Gemini borrada.");
-  };
+  inpG.oninput = ()=>{ try{ localStorage.setItem(CLAVE_GEMINI, inpG.value.trim()); }catch(e){} };
+  inpG.onchange = ()=>{ guardarClaveGemini(true); };
 }
+const btnGuardarGemini = $("btn-guardar-gemini");
+if(btnGuardarGemini) btnGuardarGemini.onclick = ()=>{ guardarClaveGemini(true); };
+const verNum = $("ver-num");
+if(verNum) verNum.textContent = VERSION;
 $("sel-vel").value = String(velocidadVoz());
 $("sel-vel").onchange = e=>{
   try{ localStorage.setItem(CLAVE_VELOCIDAD, e.target.value); }catch(err){}
@@ -2423,12 +2459,16 @@ function responder(idx){
   if(ok){
     const idxRespondida = E.actual;
     const texto = "¡Correcto! "+q.explicacion;
+    const RETARDO_MINIMO = 4000; // la pantalla de acierto se queda al menos 4 segundos
     if(vozauto){
-      leerNuevo(texto, ()=>{ avanzarSiSigue(idxRespondida); });
+      let lecturaTerminada = false, pasoMinimo = false;
+      const intentarAvanzar = ()=>{ if(lecturaTerminada && pasoMinimo) avanzarSiSigue(idxRespondida); };
+      setTimeout(()=>{ pasoMinimo = true; intentarAvanzar(); }, RETARDO_MINIMO);
+      leerNuevo(texto, ()=>{ lecturaTerminada = true; intentarAvanzar(); });
       // Respaldo: si el navegador no avisa del final de la lectura, avanzar igualmente
-      setTimeout(()=>{ avanzarSiSigue(idxRespondida); }, Math.max(3000, texto.length*70));
+      setTimeout(()=>{ lecturaTerminada = true; intentarAvanzar(); }, Math.max(RETARDO_MINIMO, texto.length*70));
     }else{
-      setTimeout(()=>{ avanzarSiSigue(idxRespondida); }, 2000);
+      setTimeout(()=>{ avanzarSiSigue(idxRespondida); }, RETARDO_MINIMO);
     }
   }else{
     if(vozauto) leerNuevo($("q-feedback").textContent, escucharComando);
