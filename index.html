@@ -180,6 +180,10 @@
   .d-item .exp{font-size:.85rem;background:rgba(255,255,255,.04);border-radius:9px;
     padding:8px 10px;margin:6px 0;}
   .d-item .nota{font-size:.82rem;color:var(--ambar);font-style:italic;margin:6px 0;}
+  .d-item.d-item-desafio{border:2px solid #1e3a5f;background:#1e3a5f;}
+  .d-item.d-item-desafio .q{font-size:1.08rem;color:#a5c8ff;}
+  .d-item.d-item-olvido{border:2px solid #7f1d1d;background:#7f1d1d;}
+  .d-item.d-item-olvido .q{font-size:1.08rem;color:#fca5a5;}
   .d-fila{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;}
 
   /* ---- Temario ---- */
@@ -190,6 +194,8 @@
   .tema .t-niv{color:var(--sub);font-weight:600;font-size:.76rem;display:block;margin-top:2px;}
   .tema-lista{margin:10px 0 2px;padding-left:18px;font-size:.83rem;color:var(--text);}
   .tema-lista li{margin-bottom:6px;}
+  .tema-lista li.t-li-mat{background:#14532d;border-radius:8px;padding:6px 10px;color:#86efac;font-weight:600;}
+  .tema-lista li.t-li-prog{background:#4a1d2e;border-radius:8px;padding:6px 10px;color:#f0b6d0;font-weight:600;}
   #js-check{position:fixed;top:0;left:0;right:0;z-index:9999;background:#7f1d1d;color:#fff;
     padding:14px 16px;font-size:.9rem;text-align:center;}
   #err-overlay{display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;
@@ -272,6 +278,13 @@
       </div>
       <div class="fila" style="margin-top:6px">
         <button class="rect" id="btn-guardar-gemini" style="--c:#f59e0b">💾 Guardar clave de Gemini</button>
+      </div>
+      <div class="fila" style="margin-top:6px">
+        <label for="inp-sync" style="flex:0 0 auto;color:var(--sub);font-size:.85rem;align-self:center">☁️ Código:</label>
+        <input type="text" id="inp-sync" placeholder="Palabra para sincronizar (la misma en los dos sitios)" autocomplete="off">
+      </div>
+      <div class="fila" style="margin-top:6px">
+        <button class="rect" id="btn-sync" style="--c:#38bdf8">☁️ Sincronizar</button>
       </div>
       <div class="fila" style="margin-top:6px">
         <label for="sel-vel" style="flex:0 0 auto;color:var(--sub);font-size:.85rem;align-self:center">🐢 Velocidad:</label>
@@ -510,7 +523,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.24";
+const VERSION = "2.25";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -693,7 +706,7 @@ function pintarOlvido(){
   arr.forEach(pregunta=>{
     const q = buscarEnBanco(pregunta);
     if(!q) return;
-    const div = document.createElement("div"); div.className="d-item";
+    const div = document.createElement("div"); div.className="d-item d-item-olvido";
     const qd = document.createElement("div"); qd.className="q"; qd.textContent = q.pregunta;
     const meta = document.createElement("div"); meta.className="meta";
     meta.innerHTML = "<span style='color:"+COLOR_TEMA[q.tema]+"'>"+TEMAS[q.tema]+"</span> · "+
@@ -1409,7 +1422,7 @@ function pintarDesafios(){
   arr.forEach(pregunta=>{
     const q = buscarEnBanco(pregunta);
     if(!q) return;
-    const div = document.createElement("div"); div.className="d-item";
+    const div = document.createElement("div"); div.className="d-item d-item-desafio";
     const qd = document.createElement("div"); qd.className="q"; qd.textContent = q.pregunta;
     const meta = document.createElement("div"); meta.className="meta";
     meta.innerHTML = "<span style='color:"+COLOR_TEMA[q.tema]+"'>"+TEMAS[q.tema]+"</span> · "+
@@ -1485,7 +1498,7 @@ function mostrarTemario(){
       BANCO.forEach(q=>{
         if(q.tema===tema && q.subtema===s && !vistos2.has(q.pregunta)){
           vistos2.add(q.pregunta);
-          html += '<li>'+q.pregunta.replace(/\n/g,"<br>")+'</li>';
+          html += '<li class="t-li-'+tema+'">'+q.pregunta.replace(/\n/g,"<br>")+'</li>';
         }
       });
       html += '</ul></details>';
@@ -1680,6 +1693,87 @@ const btnGuardarGemini = $("btn-guardar-gemini");
 if(btnGuardarGemini) btnGuardarGemini.onclick = ()=>{ guardarClaveGemini(true); };
 const verNum = $("ver-num");
 if(verNum) verNum.textContent = VERSION;
+
+/* ===================== SINCRONIZACIÓN (ntfy.sh, gratis) ===================== */
+const CLAVE_SYNC = "alignerr-simulador-sync-code-v1";
+function syncCode(){ try{ return (localStorage.getItem(CLAVE_SYNC)||"").trim(); }catch(e){ return ""; } }
+function unionArr(a,b){ const s = new Set((a||[]).concat(b||[])); return Array.from(s); }
+function fusionarSync(local, remotos){
+  let desafios=[], olvidos=[], masinfo=[];
+  const est = {examenes:0,preguntas:0,aciertos:0,por_tema:{},por_nivel:{},por_pregunta:{},mejor_pct:0,ultimos:[]};
+  for(const d of [local].concat(remotos)){
+    if(!d) continue;
+    desafios = unionArr(desafios, d.desafios);
+    olvidos = unionArr(olvidos, d.olvidos);
+    masinfo = unionArr(masinfo, d.masinfo);
+    const e = d.estadisticas; if(!e) continue;
+    est.examenes += e.examenes||0; est.preguntas += e.preguntas||0; est.aciertos += e.aciertos||0;
+    est.mejor_pct = Math.max(est.mejor_pct, e.mejor_pct||0);
+    for(const k in (e.por_tema||{})){
+      const a = est.por_tema[k] || (est.por_tema[k]={preguntas:0,aciertos:0});
+      a.preguntas += e.por_tema[k].preguntas||0; a.aciertos += e.por_tema[k].aciertos||0;
+    }
+    for(const k in (e.por_nivel||{})){
+      const a = est.por_nivel[k] || (est.por_nivel[k]={preguntas:0,aciertos:0});
+      a.preguntas += e.por_nivel[k].preguntas||0; a.aciertos += e.por_nivel[k].aciertos||0;
+    }
+    for(const k in (e.por_pregunta||{})){
+      const a = est.por_pregunta[k] || (est.por_pregunta[k]={veces:0,aciertos:0,errores:0});
+      a.veces += e.por_pregunta[k].veces||0; a.aciertos += e.por_pregunta[k].aciertos||0;
+      a.errores += e.por_pregunta[k].errores||0;
+    }
+    est.ultimos = est.ultimos.concat(e.ultimos||[]);
+  }
+  est.ultimos.sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
+  est.ultimos = est.ultimos.slice(0,10);
+  return {desafios, olvidos, masinfo, estadisticas: est};
+}
+async function sincronizar(btn){
+  const codigo = syncCode();
+  if(!codigo){
+    leerNuevo("Primero pon un código de sincronización en Ajustes. La misma palabra en los dos sitios.");
+    return;
+  }
+  const topic = "alignerr-sync-"+codigo.toLowerCase().replace(/[^a-z0-9_-]/g,"-").replace(/-+/g,"-");
+  const url = "https://ntfy.sh/"+topic;
+  const datos = {
+    fecha: new Date().toISOString(),
+    desafios: cargarDesafios(),
+    olvidos: cargarOlvido(),
+    masinfo: cargarMasInfo(),
+    estadisticas: cargarEstadisticas()
+  };
+  if(btn) btn.disabled = true;
+  try{
+    const r1 = await fetch(url, {method:"POST", body: JSON.stringify(datos)});
+    if(!r1.ok) throw new Error("subida");
+    const r2 = await fetch(url+"/json?poll=1");
+    if(!r2.ok) throw new Error("bajada");
+    const msgs = await r2.json();
+    const remotos = [];
+    for(const m of msgs){
+      try{ remotos.push(JSON.parse(m.message)); }catch(e){}
+    }
+    const fusion = fusionarSync(datos, remotos);
+    guardarDesafios(fusion.desafios);
+    guardarOlvido(fusion.olvidos);
+    guardarMasInfo(fusion.masinfo);
+    guardarEstadisticas(fusion.estadisticas);
+    leerNuevo("Sincronizado. Desafíos: "+fusion.desafios.length+". Olvidos: "+fusion.olvidos.length+
+              ". Más explicación: "+fusion.masinfo.length+".");
+  }catch(e){
+    leerNuevo("No se pudo sincronizar. Mira tu internet y prueba otra vez.");
+  }finally{
+    if(btn) btn.disabled = false;
+  }
+}
+const inpSync = $("inp-sync");
+if(inpSync){
+  inpSync.value = syncCode();
+  inpSync.oninput = ()=>{ try{ localStorage.setItem(CLAVE_SYNC, inpSync.value.trim()); }catch(e){} };
+}
+const btnSync = $("btn-sync");
+if(btnSync) btnSync.onclick = ()=>{ sincronizar(btnSync); };
 $("sel-vel").value = String(velocidadVoz());
 $("sel-vel").onchange = e=>{
   try{ localStorage.setItem(CLAVE_VELOCIDAD, e.target.value); }catch(err){}
