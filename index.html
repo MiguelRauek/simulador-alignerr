@@ -213,6 +213,7 @@
     <h1>Simulador Examen Alignerr</h1>
     <p class="sub">Práctica para el examen de ingreso · Matemáticas y Programación</p>
     <button class="primario" id="btn-instalar">📲 Instalar app</button>
+    <button class="secundario" id="btn-pantalla" style="margin-top:8px">⛶ Pantalla completa</button>
     <p class="nota" id="instalar-msg" style="display:none;color:#fbbf24;font-weight:bold"></p>
 
     <div class="card">
@@ -273,6 +274,9 @@
         <button class="rect" id="btn-probar-voz" style="--c:#60a5fa">🔊 Probar la voz elegida</button>
       </div>
       <div class="fila" style="margin-top:6px">
+        <button class="rect" id="btn-voz-masculina" style="--c:#818cf8">♂ Elegir voz masculina</button>
+      </div>
+      <div class="fila" style="margin-top:6px">
         <label for="inp-gemini" style="flex:0 0 auto;color:var(--sub);font-size:.85rem;align-self:center">🔑 Gemini:</label>
         <input type="password" id="inp-gemini" placeholder="Pega aquí tu clave de Gemini (opcional)" autocomplete="off">
       </div>
@@ -312,7 +316,6 @@
         <button class="secundario" id="btn-stats">Estadísticas</button>
         <button class="secundario" id="btn-desafios">⚔️ Desafíos</button>
         <button class="secundario" id="btn-olvidos">🧠 Olvido</button>
-        <button class="secundario" id="btn-masinfo-menu">❓ Más explicación</button>
         <button class="secundario" id="btn-temario">📚 Temario</button>
         <button class="peligro" id="btn-limpio">🧹 Modo limpio</button>
       </div>
@@ -378,9 +381,10 @@
 <section id="pantalla-reportes" class="pantalla">
   <div class="caja">
     <h1>📋 Reportes</h1>
-    <p class="nota">Aquí están tus reportes. Cópialos o expórtalos y envíalos por Telegram para revisarlos.</p>
+    <p class="nota">Aquí están tus reportes. Pulsa "Enviar reportes" para mandarlos, o cópialos/expórtalos.</p>
     <div id="rep-lista"></div>
     <div class="fila-botones">
+      <button class="primario" id="btn-rep-enviar">📤 Enviar reportes</button>
       <button class="secundario" id="btn-rep-exportar">📤 Exportar todo</button>
       <button class="secundario" id="btn-rep-volver">← Volver</button>
     </div>
@@ -523,7 +527,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.25";
+const VERSION = "2.26";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -811,6 +815,11 @@ function esVozEspana(v){
   const n = (v.name||"").toLowerCase();
   return l === "es-es" || n.includes("españa") || n.includes("spanish (spain)") || n.includes("spanish (es)");
 }
+function esVozMasculina(v){
+  if(!v) return false;
+  const n = (v.name||"").toLowerCase();
+  return /jorge|diego|carlos|juan|enrique|miguel|alejandro|pablo|andres|andrés|male|hombre|masculin|♂/.test(n);
+}
 function vozElegida(){
   try{
     const n = localStorage.getItem(CLAVE_VOZ);
@@ -954,7 +963,7 @@ function geminiKey(){
 }
 // Muestra la explicación DENTRO de la app, sin abrir ninguna ventana.
 // Si hay clave de Gemini, se la pide a Gemini; si no, usa Wikipedia (como antes).
-const GEMINI_MODELOS = ["gemini-3.1-flash-lite","gemini-3.8-flash","gemini-2.5-flash"];
+const GEMINI_MODELOS = ["gemini-3.5-flash-lite","gemini-3.1-flash-lite","gemini-3.8-flash"];
 async function explicarConGemini(q, zona, btn){
   if(!zona) return;
   zona.style.display = "";
@@ -964,45 +973,58 @@ async function explicarConGemini(q, zona, btn){
     return buscarEnInternet(q.pregunta, zona, btn, q.subtema);
   }
   zona.classList.add("globo-ia");
-  zona.textContent = "🤖 Buscando la explicación en Gemini...";
+  zona.textContent = "🤖 Buscando la explicación...";
   if(btn) btn.disabled = true;
   const prompt = "Explica de forma breve y clara, en español, la respuesta a esta pregunta de un test: \""+
     q.pregunta+"\". Da la explicación en 2 o 3 frases sencillas.";
   let motivo = "conexion";
   try{
+    modelos:
     for(const modelo of GEMINI_MODELOS){
-      const ctrl = new AbortController();
-      const t = setTimeout(()=>ctrl.abort(), 20000);
-      try{
-        const url = "https://generativelanguage.googleapis.com/v1beta/models/"+modelo+
-          ":generateContent?key="+encodeURIComponent(key);
-        const r = await fetch(url, {
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({contents:[{parts:[{text:prompt}]}]}),
-          signal: ctrl.signal
-        });
-        if(r.status===400 || r.status===401 || r.status===403){
-          const cuerpo = await r.text();
-          motivo = /api[_ ]?key/i.test(cuerpo) ? "clave" : "rechazo";
-          break;
+      // Primero intentamos sin "pensar" (más rápido). Si el modelo no lo admite,
+      // reintentamos igual que antes (sin configuración).
+      const configs = [ {thinkingConfig:{thinkingBudget:0}, maxOutputTokens:400}, null ];
+      for(const gen of configs){
+        const ctrl = new AbortController();
+        const t = setTimeout(()=>ctrl.abort(), 12000);
+        try{
+          const url = "https://generativelanguage.googleapis.com/v1beta/models/"+modelo+
+            ":generateContent?key="+encodeURIComponent(key);
+          const cuerpoPeticion = {contents:[{parts:[{text:prompt}]}]};
+          if(gen) cuerpoPeticion.generationConfig = gen;
+          const r = await fetch(url, {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify(cuerpoPeticion),
+            signal: ctrl.signal
+          });
+          if(r.status===400){
+            if(gen) continue; // la config no vale para este modelo: probamos sin ella
+            const cuerpo = await r.text();
+            motivo = /api[_ ]?key/i.test(cuerpo) ? "clave" : "rechazo";
+            break modelos;
+          }
+          if(r.status===401 || r.status===403){
+            const cuerpo = await r.text();
+            motivo = /api[_ ]?key/i.test(cuerpo) ? "clave" : "rechazo";
+            break modelos;
+          }
+          if(r.status===429){ motivo = "limite"; break modelos; }
+          if(!r.ok) break; // modelo no disponible: probamos el siguiente
+          const d = await r.json();
+          const cand = d.candidates && d.candidates[0];
+          const txt = (cand && cand.content && cand.content.parts)
+            ? cand.content.parts.map(p=>p.text||"").join(" ").trim() : "";
+          if(!txt) break; // sin texto: probamos el siguiente modelo
+          zona.textContent = txt;
+          leerNuevo(expandirTexto(txt, true));
+          return;
+        }catch(err){
+          motivo = (err && err.name==="AbortError") ? "tiempo" : "conexion";
+          break; // no reintentamos el mismo modelo: pasamos al siguiente
+        }finally{
+          clearTimeout(t);
         }
-        if(r.status===429){ motivo = "limite"; break; }
-        if(!r.ok) continue; // modelo no disponible: probamos el siguiente
-        const d = await r.json();
-        const cand = d.candidates && d.candidates[0];
-        const txt = (cand && cand.content && cand.content.parts)
-          ? cand.content.parts.map(p=>p.text||"").join(" ").trim() : "";
-        if(!txt) continue;
-        const texto = "🤖 Gemini: "+txt;
-        zona.textContent = texto;
-        leerNuevo(expandirTexto(texto, true));
-        return;
-      }catch(err){
-        motivo = (err && err.name==="AbortError") ? "tiempo" : "conexion";
-        continue;
-      }finally{
-        clearTimeout(t);
       }
     }
   }finally{
@@ -1210,30 +1232,15 @@ function quitarDeMasInfo(pregunta){
   actualizarContadorMenu();
 }
 function actualizarBotonMasInfo(){
-  const q = E.preguntas && E.preguntas[E.actual];
   const b = $("btn-masinfo");
-  if(!b || !q) return;
-  if(enMasInfo(q.pregunta)){
-    b.textContent = "✅ Añadida — quitar";
-    b.classList.add("en-masinfo");
-  }else{
-    b.textContent = "❓ Más explicación";
-    b.classList.remove("en-masinfo");
-  }
+  if(!b) return;
+  b.textContent = "❓ Más explicación";
+  b.classList.remove("en-masinfo");
 }
 function mostrarMasInfoEnQuiz(q){
+  // Ya no se lleva contabilidad de "más explicación": no se muestra ningún aviso.
   const el = $("q-mas");
-  if(!el) return;
-  if(enMasInfo(q.pregunta)){
-    if(q.ext){
-      el.textContent = "📖 Explicación ampliada: "+q.ext;
-    }else{
-      el.textContent = "✅ Añadida a más explicación. Pregunta enviada al asistente de Google.";
-    }
-    el.style.display = "";
-  }else{
-    el.style.display = "none";
-  }
+  if(el){ el.style.display = "none"; el.textContent = ""; }
 }
 function mostrarMasInfo(){
   cancelarTimer();
@@ -1291,9 +1298,6 @@ function actualizarContadorMenu(){
   const m = cargarOlvido().length;
   const bo = $("btn-olvidos");
   if(bo) bo.textContent = m ? "🧠 Olvido ("+m+")" : "🧠 Olvido";
-  const mi = cargarMasInfo().length;
-  const bm = $("btn-masinfo-menu");
-  if(bm) bm.textContent = mi ? "❓ Más explicación ("+mi+")" : "❓ Más explicación";
   actualizarContadorReportes();
 }
 function guardarReportes(lista){ localStorage.setItem("alignerr-simulador-reportes-v1", JSON.stringify(lista)); }
@@ -1346,6 +1350,16 @@ function formatoReporte(r, n){
   }
   s += "Propuesta: "+r.texto;
   return s;
+}
+/* Envío de reportes al asistente (ntfy.sh, gratis y anónimo) */
+const TOPIC_REPORTES = "alignerr-reportes-7k3q9v2m";
+function enviarReporteNtfy(r, n){
+  const txt = formatoReporte(r, n || (reportes.indexOf(r)+1));
+  return fetch("https://ntfy.sh/"+TOPIC_REPORTES, {
+    method: "POST",
+    headers: { "Title": "Reporte Alignerr", "Tags": "memo" },
+    body: txt
+  });
 }
 function mostrarReportes(){
   const lista = $("rep-lista");
@@ -1652,7 +1666,11 @@ function cargarVoces(){
   if(!sel) return;
   const voces = speechSynthesis.getVoices().filter(v=>v.lang && v.lang.toLowerCase().startsWith("es"));
   const actual = localStorage.getItem(CLAVE_VOZ) || "";
-  voces.sort((a,b)=> (esVozEspana(b)?1:0) - (esVozEspana(a)?1:0));
+  voces.sort((a,b)=>{
+    const ea = esVozEspana(a)?2:0, eb = esVozEspana(b)?2:0;
+    const ma = esVozMasculina(a)?1:0, mb = esVozMasculina(b)?1:0;
+    return (eb+mb) - (ea+ma);
+  });
   sel.innerHTML = "";
   const op0 = document.createElement("option");
   op0.value = ""; op0.textContent = "Voz por defecto (España)";
@@ -1660,11 +1678,12 @@ function cargarVoces(){
   voces.forEach(v=>{
     const op = document.createElement("option");
     op.value = v.name;
-    op.textContent = v.name + (esVozEspana(v) ? " (España)" : "") + (v.default ? " (por defecto)" : "");
+    op.textContent = v.name + (esVozEspana(v) ? " (España)" : "") + (esVozMasculina(v) ? " (masculina)" : "") + (v.default ? " (por defecto)" : "");
     sel.appendChild(op);
   });
   const guardada = voces.find(v=>v.name===actual);
-  sel.value = guardada ? actual : (voces.find(esVozEspana) ? voces.find(esVozEspana).name : "");
+  const preferida = voces.find(v=>esVozEspana(v) && esVozMasculina(v)) || voces.find(esVozEspana) || voces.find(esVozMasculina);
+  sel.value = guardada ? actual : (preferida ? preferida.name : "");
 }
 if("speechSynthesis" in window){
   cargarVoces();
@@ -1676,6 +1695,18 @@ $("sel-voz").onchange = ()=>{
 $("btn-probar-voz").onclick = ()=>{
   const v = vozElegida();
   leerNuevo("Probando la voz: "+(v ? v.name : "la voz por defecto")+". Así se leerán las preguntas.");
+};
+const btnVozMasc = $("btn-voz-masculina");
+if(btnVozMasc) btnVozMasc.onclick = ()=>{
+  const voces = speechSynthesis.getVoices().filter(v=>v.lang && v.lang.toLowerCase().startsWith("es"));
+  const v = voces.find(x=>esVozEspana(x) && esVozMasculina(x)) || voces.find(esVozMasculina);
+  if(v){
+    try{ localStorage.setItem(CLAVE_VOZ, v.name); }catch(e){}
+    const sel = $("sel-voz"); if(sel) sel.value = v.name;
+    leerNuevo("Voz masculina elegida: "+v.name+".");
+  }else{
+    leerNuevo("No encuentro ninguna voz masculina instalada. Instálala en los ajustes de Texto a voz del teléfono y vuelve a intentarlo.");
+  }
 };
 const inpG = $("inp-gemini");
 function guardarClaveGemini(avisar){
@@ -1693,6 +1724,25 @@ const btnGuardarGemini = $("btn-guardar-gemini");
 if(btnGuardarGemini) btnGuardarGemini.onclick = ()=>{ guardarClaveGemini(true); };
 const verNum = $("ver-num");
 if(verNum) verNum.textContent = VERSION;
+const btnPantalla = $("btn-pantalla");
+if(btnPantalla) btnPantalla.onclick = ()=>{
+  const el = document.documentElement;
+  const ya = document.fullscreenElement || document.webkitFullscreenElement;
+  if(ya){
+    const salir = document.exitFullscreen || document.webkitExitFullscreen;
+    if(salir) salir.call(document);
+    leerNuevo("Pantalla normal.");
+  }else{
+    const pedir = el.requestFullscreen || el.webkitRequestFullscreen;
+    if(pedir){
+      Promise.resolve(pedir.call(el))
+        .then(()=>leerNuevo("Pantalla completa."))
+        .catch(()=>leerNuevo("No se pudo poner en pantalla completa en este navegador."));
+    }else{
+      leerNuevo("Este navegador no permite pantalla completa. Instala la app para verla sin la barra de direcciones.");
+    }
+  }
+};
 
 /* ===================== SINCRONIZACIÓN (ntfy.sh, gratis) ===================== */
 const CLAVE_SYNC = "alignerr-simulador-sync-code-v1";
@@ -1759,8 +1809,7 @@ async function sincronizar(btn){
     guardarOlvido(fusion.olvidos);
     guardarMasInfo(fusion.masinfo);
     guardarEstadisticas(fusion.estadisticas);
-    leerNuevo("Sincronizado. Desafíos: "+fusion.desafios.length+". Olvidos: "+fusion.olvidos.length+
-              ". Más explicación: "+fusion.masinfo.length+".");
+    leerNuevo("Sincronizado. Desafíos: "+fusion.desafios.length+". Olvidos: "+fusion.olvidos.length+".");
   }catch(e){
     leerNuevo("No se pudo sincronizar. Mira tu internet y prueba otra vez.");
   }finally{
@@ -1808,7 +1857,6 @@ $("btn-comenzar").onclick = iniciar;
 $("btn-stats").onclick = mostrarEstadisticas;
 $("btn-desafios").onclick = mostrarDesafios;
 $("btn-olvidos").onclick = mostrarOlvido;
-$("btn-masinfo-menu").onclick = mostrarMasInfo;
 $("btn-temario").onclick = ()=>{ mostrarTemario(); mostrar("pantalla-temario"); };
 $("btn-volver4").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-menu"); };
 $("btn-volver3").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-menu"); };
@@ -1839,6 +1887,32 @@ function actualizarBotonVoz(){
   // El texto del botón NO cambia (para que no se mueva el layout): solo color + pulso
   b.classList.toggle("escuchando", !!recVoz);
 }
+/* Cuando se vuelve de otra app, Chrome a veces avisa "not-allowed" aunque el
+   permiso siga concedido. Comprobamos el permiso real y, si está concedido,
+   reintentamos en vez de decir que está denegado. */
+let reintentosMic = 0;
+function permisoMicConcedido(){
+  return new Promise(res=>{
+    try{
+      if(!navigator.permissions || !navigator.permissions.query){ res(null); return; }
+      navigator.permissions.query({name:"microphone"})
+        .then(p=>res(p.state === "granted"))
+        .catch(()=>res(null));
+    }catch(e){ res(null); }
+  });
+}
+function micDenegado(reintentar){
+  permisoMicConcedido().then(concedido=>{
+    if(concedido === true && reintentosMic < 6){
+      reintentosMic++;
+      $("q-feedback").textContent = "Reactivando el micrófono...";
+      autoVozTimer = setTimeout(reintentar, 900);
+    }else{
+      $("q-feedback").textContent = "Permiso de micrófono denegado. Actívalo en los ajustes del navegador: Configuración de sitios, Micrófono.";
+      leerNuevo("Permiso de micrófono denegado. Actívalo en los ajustes del navegador, en Configuración de sitios, Micrófono.");
+    }
+  });
+}
 function iniciarReconocimiento(auto){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SR){
@@ -1856,7 +1930,7 @@ function iniciarReconocimiento(auto){
   let okVoz = false, errVoz = false;
   const norm = x=>String(x).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
     .replace(/equis/g,"x").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
-  rec.onstart = ()=>{ actualizarBotonVoz(); pedirWakeLock(); if(!auto) $("q-feedback").textContent = "🎤 Escuchando... di uno, dos, tres o cuatro."; };
+  rec.onstart = ()=>{ reintentosMic = 0; actualizarBotonVoz(); pedirWakeLock(); if(!auto) $("q-feedback").textContent = "🎤 Escuchando... di uno, dos, tres o cuatro."; };
   rec.onresult = ev=>{
     okVoz = true;
     const t = norm((ev.results[0][0].transcript)||"");
@@ -1877,8 +1951,7 @@ function iniciarReconocimiento(auto){
   rec.onerror = ev=>{
     errVoz = true;
     if(ev.error === "not-allowed" || ev.error === "service-not-allowed"){
-      $("q-feedback").textContent = "Permiso de micrófono denegado. Actívalo en los ajustes del navegador: Configuración de sitios, Micrófono.";
-      leerNuevo("Permiso de micrófono denegado. Actívalo en los ajustes del navegador, en Configuración de sitios, Micrófono.");
+      micDenegado(()=>iniciarReconocimiento(auto));
     }else if(ev.error !== "aborted" && !auto){
       $("q-feedback").textContent = "No se pudo escuchar. Inténtalo de nuevo.";
     }
@@ -1907,7 +1980,7 @@ function escucharComando(){
   let okVoz = false, errVoz = false, reintento = false;
   const norm = x=>String(x).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
     .replace(/equis/g,"x").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
-  rec.onstart = ()=>{ actualizarBotonVoz(); pedirWakeLock(); };
+  rec.onstart = ()=>{ reintentosMic = 0; actualizarBotonVoz(); pedirWakeLock(); };
   rec.onresult = ev=>{
     okVoz = true;
     const t = norm((ev.results[0][0].transcript)||"");
@@ -1947,8 +2020,7 @@ function escucharComando(){
     }
     errVoz = true;
     if(ev.error === "not-allowed" || ev.error === "service-not-allowed"){
-      $("q-feedback").textContent = "Permiso de micrófono denegado. Actívalo en los ajustes del navegador: Configuración de sitios, Micrófono.";
-      leerNuevo("Permiso de micrófono denegado. Actívalo en los ajustes del navegador, en Configuración de sitios, Micrófono.");
+      micDenegado(escucharComando);
     }
     recVoz = null; actualizarBotonVoz(); soltarWakeLock();
   };
@@ -1974,7 +2046,7 @@ function escucharResultados(){
   let okVoz = false, errVoz = false, reintento = false;
   const norm = x=>String(x).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
     .replace(/equis/g,"x").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
-  rec.onstart = ()=>{ pedirWakeLock(); };
+  rec.onstart = ()=>{ reintentosMic = 0; pedirWakeLock(); };
   rec.onresult = ev=>{
     okVoz = true;
     const t = norm((ev.results[0][0].transcript)||"");
@@ -2011,8 +2083,7 @@ function escucharResultados(){
     }
     errVoz = true;
     if(ev.error === "not-allowed" || ev.error === "service-not-allowed"){
-      $("r-mensaje").textContent = "Permiso de micrófono denegado. Actívalo en los ajustes del navegador: Configuración de sitios, Micrófono.";
-      leerNuevo("Permiso de micrófono denegado. Actívalo en los ajustes del navegador, en Configuración de sitios, Micrófono.");
+      micDenegado(escucharResultados);
     }
     recVoz = null; soltarWakeLock();
   };
@@ -2162,8 +2233,6 @@ $("btn-pausa").onclick = ()=>{
 $("btn-masinfo").onclick = ()=>{
   const q = E.preguntas[E.actual];
   if(!q) return;
-  const ya = enMasInfo(q.pregunta);
-  marcarMasInfo(q);
   explicarConGemini(q, $("q-web"), $("btn-masinfo"));
 };
 $("btn-volver").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-menu"); };
@@ -2191,6 +2260,21 @@ $("btn-reportar").onclick = ()=>{ abrirReporte(true); };
 $("btn-reportar-menu").onclick = ()=>{ abrirReporte(false); };
 $("btn-reportes-menu").onclick = ()=>{ mostrarReportes(); };
 $("btn-rep-volver").onclick = ()=>{ mostrar("pantalla-menu"); };
+$("btn-rep-enviar").onclick = ()=>{
+  if(reportes.length === 0){ leerNuevo("No hay reportes que enviar."); return; }
+  leerNuevo("Enviando reportes...");
+  Promise.all(reportes.map((r,i)=>enviarReporteNtfy(r,i+1)))
+    .then(()=>{
+      $("rep-lista").insertAdjacentHTML("afterbegin",
+        '<p class="nota" style="color:var(--ok)">✅ Reportes enviados.</p>');
+      leerNuevo("Reportes enviados.");
+    })
+    .catch(()=>{
+      $("rep-lista").insertAdjacentHTML("afterbegin",
+        '<p class="nota">⚠ No se pudieron enviar. Comprueba tu conexión.</p>');
+      leerNuevo("No se pudieron enviar los reportes. Comprueba tu conexión.");
+    });
+};
 $("btn-rep-exportar").onclick = ()=>{
   const txt = reportes.map((r,i)=>formatoReporte(r,i+1)).join("\n\n"+"=".repeat(40)+"\n\n");
   try{
@@ -2248,8 +2332,10 @@ $("btn-r-guardar").onclick = ()=>{
   });
   guardarReportes(reportes);
   actualizarContadorReportes();
-  $("r-msg").textContent = "✅ Reporte guardado. Envíalo desde 📋 Reportes.";
-  leerNuevo("Reporte guardado. Puedes enviarlo desde el menú, en Reportes.");
+  const nuevo = reportes[reportes.length-1];
+  enviarReporteNtfy(nuevo, reportes.length).catch(()=>{});
+  $("r-msg").textContent = "✅ Reporte guardado y enviado.";
+  leerNuevo("Reporte guardado y enviado.");
   cerrarReporte();
 };
 $("btn-r-cancelar").onclick = ()=>{ cerrarReporte(); };
@@ -2354,13 +2440,13 @@ $("btn-borrar").onclick = ()=>{
 };
 $("btn-limpio").onclick = ()=>{
   const nDes = cargarDesafios().length, nOlv = cargarOlvido().length,
-        nMas = cargarMasInfo().length, nEx = cargarEstadisticas().examenes||0;
-  if(nDes===0 && nOlv===0 && nMas===0 && nEx===0){
+        nEx = cargarEstadisticas().examenes||0;
+  if(nDes===0 && nOlv===0 && nEx===0){
     alert("No hay nada que borrar: no tienes marcas ni estadísticas.");
     return;
   }
   if(confirm("🧹 Modo limpio: se borrará TODO (marcas y estadísticas).\n\n"+
-             "· Desafíos: "+nDes+"\n· Olvido: "+nOlv+"\n· Más explicación: "+nMas+
+             "· Desafíos: "+nDes+"\n· Olvido: "+nOlv+
              "\n· Exámenes registrados: "+nEx+"\n\n¿Seguro?")){
     guardarDesafios([]);
     guardarOlvido([]);
@@ -2553,16 +2639,15 @@ function responder(idx){
   if(ok){
     const idxRespondida = E.actual;
     const texto = "¡Correcto! "+q.explicacion;
-    const RETARDO_MINIMO = 4000; // la pantalla de acierto se queda al menos 4 segundos
     if(vozauto){
-      let lecturaTerminada = false, pasoMinimo = false;
-      const intentarAvanzar = ()=>{ if(lecturaTerminada && pasoMinimo) avanzarSiSigue(idxRespondida); };
-      setTimeout(()=>{ pasoMinimo = true; intentarAvanzar(); }, RETARDO_MINIMO);
-      leerNuevo(texto, ()=>{ lecturaTerminada = true; intentarAvanzar(); });
-      // Respaldo: si el navegador no avisa del final de la lectura, avanzar igualmente
-      setTimeout(()=>{ lecturaTerminada = true; intentarAvanzar(); }, Math.max(RETARDO_MINIMO, texto.length*70));
+      // Esperar a que la voz termine de leer la explicación y continuar sola.
+      let avanzado = false;
+      const avanzar = ()=>{ if(avanzado) return; avanzado = true; avanzarSiSigue(idxRespondida); };
+      leerNuevo(texto, avanzar);
+      // Respaldo: si el navegador no avisa del final de la lectura, avanzar igualmente.
+      setTimeout(avanzar, Math.max(2500, texto.length*80));
     }else{
-      setTimeout(()=>{ avanzarSiSigue(idxRespondida); }, RETARDO_MINIMO);
+      setTimeout(()=>{ avanzarSiSigue(idxRespondida); }, 4000);
     }
   }else{
     if(vozauto) leerNuevo($("q-feedback").textContent, escucharComando);
