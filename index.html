@@ -360,6 +360,7 @@
     <div id="q-mas"></div>
     <button id="btn-masinfo">❓ Más explicación</button>
     <button id="btn-repetir-exp">🔁 Repetir explicación</button>
+    <button id="btn-silenciar">🔇 Silenciar voz</button>
     <div id="q-web" style="display:none"></div>
     <button id="btn-siguiente" disabled>Siguiente →</button>
   </div>
@@ -533,7 +534,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.28";
+const VERSION = "2.29";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -2179,6 +2180,13 @@ function pararVoz(){
   actualizarPausa();
   soltarWakeLock();
 }
+// Corta solo la lectura en voz (sin tocar el micrófono), para el botón "Silenciar voz".
+function silenciarVoz(){
+  if("speechSynthesis" in window) speechSynthesis.cancel();
+  vozToken++;
+  actualizarPausa();
+  soltarWakeLock();
+}
 $("btn-voz").onclick = responderPorVoz;
 $("btn-saltar").onclick = ()=>{
   if(bloqueoToques) return;
@@ -2195,6 +2203,7 @@ $("btn-masinfo").onclick = ()=>{
   if(!q) return;
   explicarConGemini(q, $("q-web"), $("btn-masinfo"));
 };
+$("btn-silenciar").onclick = ()=>{ silenciarVoz(); };
 $("btn-repetir-exp").onclick = ()=>{
   const q = E.preguntas[E.actual];
   if(!q) return;
@@ -2624,12 +2633,12 @@ function responder(idx){
       // Esperar a que la voz termine de leer la explicación, dejar 1 segundo
       // de margen y continuar sola.
       let avanzado = false;
-      const avanzar = ()=>{ if(avanzado) return; avanzado = true; avisarApuro(); setTimeout(()=>avanzarSiSigue(idxRespondida), 2000); };
+      // Al responder NO hay relámpago: solo se espera un segundo tras la voz.
+      const avanzar = ()=>{ if(avanzado) return; avanzado = true; setTimeout(()=>avanzarSiSigue(idxRespondida), 1000); };
       leerNuevo(texto, avanzar);
       // Respaldo: si el navegador no avisa del final de la lectura, avanzar igualmente.
       setTimeout(avanzar, Math.max(2500, texto.length*80));
     }else{
-      setTimeout(avisarApuro, 2000);
       setTimeout(()=>{ avanzarSiSigue(idxRespondida); }, 4000);
     }
   }else{
@@ -2652,7 +2661,11 @@ function tiempoAgotado(){
   E.respondidas.add(E.actual);
   ultimaCorrecta = false;
   $("btn-siguiente").disabled = false;
+  // Solo cuando se agota el tiempo: relámpago (2 s) y DESPUÉS 3 s antes de avanzar.
+  avisarApuro();
   if(vozauto) leerNuevo($("q-feedback").textContent, escucharComando);
+  const idxAgotada = E.actual;
+  setTimeout(()=>{ avanzarSiSigue(idxAgotada); }, 2000 + 3000);
 }
 function saltarPregunta(){
   pararVoz();
