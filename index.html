@@ -204,15 +204,15 @@
   #err-overlay{display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;
     background:#7f1d1d;color:#fff;padding:10px 14px;font-size:.8rem;text-align:center;}
   #flash-aviso{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9997;}
-  #flash-aviso.on{animation:relampago 1s ease-out;}
+  #flash-aviso.on{animation:relampago 2s ease-out;}
   @keyframes relampago{
-    0%{opacity:0;} 15%{opacity:.6;} 30%{opacity:.08;} 45%{opacity:.5;}
-    60%{opacity:.06;} 80%{opacity:.33;} 100%{opacity:0;}
+    0%{opacity:0;} 4%{opacity:.6;} 8%{opacity:.05;}
+    50%{opacity:.5;} 62%{opacity:.06;} 82%{opacity:.3;} 100%{opacity:0;}
   }
-  body.fondo-aviso{animation:fondoAviso 1s ease-out;}
+  body.fondo-aviso{animation:fondoAviso 2s ease-out;}
   @keyframes fondoAviso{
-    0%{filter:brightness(1);} 20%{filter:brightness(2.2);} 45%{filter:brightness(1.1);}
-    70%{filter:brightness(1.8);} 100%{filter:brightness(1);}
+    0%{filter:brightness(1);} 5%{filter:brightness(2.2);} 10%{filter:brightness(1.1);}
+    55%{filter:brightness(1.8);} 100%{filter:brightness(1);}
   }
   button,.rect,.opcion,.primario,.secundario{touch-action:manipulation;}
 </style>
@@ -280,19 +280,6 @@
 
       <div class="fila" style="margin-top:6px">
         <button class="rect" id="btn-autoleer" style="--c:#34d399">🔊 Leer pregunta automática: SÍ</button>
-      </div>
-      <div class="fila" style="margin-top:6px">
-        <label for="sel-voz" style="flex:0 0 auto;color:var(--sub);font-size:.85rem;align-self:center">🗣 Voz:</label>
-        <select id="sel-voz" style="flex:1"></select>
-      </div>
-      <div class="fila" style="margin-top:6px">
-        <button class="rect" id="btn-probar-voz" style="--c:#60a5fa">🔊 Probar la voz elegida</button>
-      </div>
-      <div class="fila" style="margin-top:6px">
-        <button class="rect" id="btn-voz-masculina" style="--c:#818cf8">♂ Elegir voz masculina</button>
-      </div>
-      <div class="fila" style="margin-top:6px">
-        <button class="rect" id="btn-siguiente-voz" style="--c:#a78bfa">🔊 Probar la siguiente voz</button>
       </div>
       <div class="fila" style="margin-top:6px">
         <label for="inp-gemini" style="flex:0 0 auto;color:var(--sub);font-size:.85rem;align-self:center">🔑 Gemini:</label>
@@ -546,7 +533,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.27";
+const VERSION = "2.28";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -1681,67 +1668,6 @@ $("btn-autoleer").onclick = ()=>{
   try{ localStorage.setItem("alignerr-simulador-autoleer-v1", autoleer ? "1" : "0"); }catch(e){}
   pintarAutoleer();
 };
-function cargarVoces(){
-  if(!("speechSynthesis" in window)) return;
-  const sel = $("sel-voz");
-  if(!sel) return;
-  const voces = speechSynthesis.getVoices().filter(v=>v.lang && v.lang.toLowerCase().startsWith("es"));
-  const actual = localStorage.getItem(CLAVE_VOZ) || "";
-  voces.sort((a,b)=>{
-    const ea = esVozEspana(a)?2:0, eb = esVozEspana(b)?2:0;
-    const ma = esVozMasculina(a)?1:0, mb = esVozMasculina(b)?1:0;
-    return (eb+mb) - (ea+ma);
-  });
-  sel.innerHTML = "";
-  const op0 = document.createElement("option");
-  op0.value = ""; op0.textContent = "Voz por defecto (España)";
-  sel.appendChild(op0);
-  voces.forEach(v=>{
-    const op = document.createElement("option");
-    op.value = v.name;
-    op.textContent = v.name + (esVozEspana(v) ? " (España)" : "") + (esVozMasculina(v) ? " (masculina)" : "") + (v.default ? " (por defecto)" : "");
-    sel.appendChild(op);
-  });
-  const guardada = voces.find(v=>v.name===actual);
-  const preferida = voces.find(v=>esVozEspana(v) && esVozMasculina(v)) || voces.find(esVozEspana) || voces.find(esVozMasculina);
-  sel.value = guardada ? actual : (preferida ? preferida.name : "");
-}
-if("speechSynthesis" in window){
-  cargarVoces();
-  speechSynthesis.onvoiceschanged = cargarVoces;
-}
-$("sel-voz").onchange = ()=>{
-  try{ localStorage.setItem(CLAVE_VOZ, $("sel-voz").value); }catch(e){}
-};
-$("btn-probar-voz").onclick = ()=>{
-  const v = vozElegida();
-  leerNuevo("Probando la voz: "+(v ? v.name : "la voz por defecto")+". Así se leerán las preguntas.");
-};
-const btnVozMasc = $("btn-voz-masculina");
-if(btnVozMasc) btnVozMasc.onclick = ()=>{
-  const voces = speechSynthesis.getVoices().filter(v=>v.lang && v.lang.toLowerCase().startsWith("es"));
-  const v = voces.find(x=>esVozEspana(x) && esVozMasculina(x)) || voces.find(esVozMasculina);
-  if(v){
-    try{ localStorage.setItem(CLAVE_VOZ, v.name); }catch(e){}
-    const sel = $("sel-voz"); if(sel) sel.value = v.name;
-    leerNuevo("Voz masculina elegida: "+v.name+".");
-  }else{
-    leerNuevo("En Android la voz no la elige la app, la elige el teléfono. Para poner una voz masculina: abre los Ajustes, busca Salida de texto a voz (en Accesibilidad, o en Sistema, Idiomas y entrada), toca la rueda dentada junto al Motor de texto a voz de Google, entra en Instalar datos de voz, elige Español y ahí verás varias voces de hombre y de mujer. Escúchalas y deja puesta una masculina. Después, esta app usará esa voz.");
-  }
-};
-let idxVozPrueba = -1;
-const btnSigVoz = $("btn-siguiente-voz");
-if(btnSigVoz) btnSigVoz.onclick = ()=>{
-  const voces = speechSynthesis.getVoices().filter(v=>v.lang && v.lang.toLowerCase().startsWith("es"));
-  if(voces.length === 0){ leerNuevo("No hay voces en español instaladas."); return; }
-  idxVozPrueba = (idxVozPrueba + 1) % voces.length;
-  const v = voces[idxVozPrueba];
-  try{ localStorage.setItem(CLAVE_VOZ, v.name); }catch(e){}
-  const sel = $("sel-voz"); if(sel) sel.value = v.name;
-  const genero = esVozMasculina(v) ? "masculina" : (v.name ? "" : "");
-  leerNuevo("Voz "+(idxVozPrueba+1)+" de "+voces.length+": "+v.name+(genero?", voz "+genero:"")+
-            ". Escucha cómo suena. Si te gusta, no pulses más. Si no, vuelve a pulsar para la siguiente.");
-};
 const inpG = $("inp-gemini");
 function guardarClaveGemini(avisar){
   if(!inpG) return;
@@ -2698,12 +2624,12 @@ function responder(idx){
       // Esperar a que la voz termine de leer la explicación, dejar 1 segundo
       // de margen y continuar sola.
       let avanzado = false;
-      const avanzar = ()=>{ if(avanzado) return; avanzado = true; avisarApuro(); setTimeout(()=>avanzarSiSigue(idxRespondida), 1000); };
+      const avanzar = ()=>{ if(avanzado) return; avanzado = true; avisarApuro(); setTimeout(()=>avanzarSiSigue(idxRespondida), 2000); };
       leerNuevo(texto, avanzar);
       // Respaldo: si el navegador no avisa del final de la lectura, avanzar igualmente.
       setTimeout(avanzar, Math.max(2500, texto.length*80));
     }else{
-      setTimeout(avisarApuro, 3000);
+      setTimeout(avisarApuro, 2000);
       setTimeout(()=>{ avanzarSiSigue(idxRespondida); }, 4000);
     }
   }else{
