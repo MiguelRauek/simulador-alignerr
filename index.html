@@ -353,6 +353,7 @@
       <button id="btn-desafio">⚔️ Marcar como Desafío (5×)</button>
       <button id="btn-reportar">⚠️ Reportar</button>
       <button id="btn-saltar">⏭ Saltar</button>
+      <button id="btn-tranquilo">📖 Leer tranquilo</button>
     </div>
     <div id="q-opciones"></div>
     <button id="btn-olvido">🧠 Marcar como Olvido (no sale)</button>
@@ -2192,6 +2193,14 @@ $("btn-saltar").onclick = ()=>{
   if(bloqueoToques) return;
   saltarPregunta();
 };
+$("btn-tranquilo").onclick = ()=>{
+  if(E.tranquilo) return;
+  E.tranquilo = true;
+  cancelarTimer();
+  const lbl = $("q-timer");
+  if(lbl){ lbl.textContent = "⏱ Tranquilo"; lbl.style.color = "#4a9eff"; }
+  leerNuevo("Tiempo detenido en esta pregunta. Léela con calma y pulsa Siguiente cuando termines.");
+};
 $("btn-pausa").onclick = ()=>{
   if(!("speechSynthesis" in window)) return;
   if(speechSynthesis.paused) speechSynthesis.resume();
@@ -2508,6 +2517,8 @@ function iniciar(){
 function mostrarPregunta(){
   const q = E.preguntas[E.actual], total = E.preguntas.length;
   pararVoz();
+  E.tranquilo = false;
+  const btq = $("btn-tranquilo"); if(btq) btq.style.display = E.tipoTimer ? "" : "none";
   const bl = $("btn-leer"); if(bl) bl.textContent = "🔊 Leer pregunta";
   $("q-progreso").textContent = "Pregunta "+(E.actual+1)+" de "+total;
   $("q-puntos").textContent = "Aciertos: "+E.aciertos;
