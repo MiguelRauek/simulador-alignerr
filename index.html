@@ -57,6 +57,25 @@
   .peligro{background:var(--card2);color:var(--bad);border:none;border-radius:11px;
     font-size:.9rem;padding:9px 16px;cursor:pointer;}
 
+  /* ---- Resumen de estadísticas en el menú principal ---- */
+  .resumen-est{padding:10px 12px;margin:0 auto 12px;}
+  .res-linea{font-size:.92rem;font-weight:700;line-height:1.5;color:var(--text);}
+  .res-linea .vacio{color:var(--sub);font-weight:400;}
+
+  /* ---- Botones grandes de sección ---- */
+  .secundario.grande{font-size:.92rem;font-weight:700;padding:11px 12px;border-radius:12px;}
+
+  /* ---- Menú principal compacto (sin scroll) ---- */
+  .caja-menu{padding:6px 14px 14px;}
+  .caja-menu h1{font-size:1.15rem;margin:0 0 6px;}
+  .card-menu{padding:10px;}
+  .lbl{color:var(--sub);font-size:.85rem;flex:0 0 auto;align-self:center;}
+  .card-menu .rect{min-width:88px;padding:8px 8px;font-size:.86rem;}
+  .card-menu .contador{font-size:.68rem;line-height:1.3;margin-top:5px;color:var(--sub);}
+  .card-menu .num-presets{margin-top:6px;}
+  .card-menu .primario{margin-top:8px;}
+  .card-menu #contador-disp{margin:4px 0 0;font-size:.76rem;}
+
   /* ---- Número de preguntas ---- */
   .num-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;}
   .num-presets .rect{flex:1 1 auto;min-width:52px;padding:8px 10px;font-size:.9rem;}
@@ -145,10 +164,10 @@
     border:1.5px solid var(--ambar);border-radius:11px;font-size:.85rem;font-weight:700;
     padding:7px 10px;cursor:pointer;}
   #btn-desafio.en-desafio{color:var(--ok);border-color:var(--ok);}
-  #btn-olvido{background:var(--card2);color:#a78bfa;
+  #btn-olvido{background:rgba(167,139,250,.16);color:#a78bfa;
     border:1.5px solid #a78bfa;border-radius:11px;font-size:.85rem;font-weight:700;
     padding:7px 10px;cursor:pointer;margin:8px 0 0;}
-  #btn-olvido.en-olvido{color:var(--bad);border-color:var(--bad);}
+  #btn-olvido.en-olvido{color:var(--bad);border-color:var(--bad);background:rgba(248,113,113,.14);}
   #btn-leer{background:var(--card2);color:#4a9eff;
     border:1.5px solid #4a9eff;border-radius:11px;font-size:.85rem;font-weight:700;
     padding:7px 10px;cursor:pointer;}
@@ -162,14 +181,19 @@
   #btn-saltar{background:var(--card2);color:var(--ambar);
     border:1.5px solid var(--ambar);border-radius:11px;font-size:.85rem;font-weight:700;
     padding:7px 10px;cursor:pointer;}
+  #btn-tranquilo{background:var(--card2);color:#38bdf8;
+    border:1.5px solid #38bdf8;border-radius:11px;font-size:.85rem;font-weight:700;
+    padding:7px 10px;cursor:pointer;}
   #btn-voz{background:var(--card2);color:#f472b6;
     border:1.5px solid #f472b6;border-radius:11px;font-size:.85rem;font-weight:700;
     padding:7px 10px;cursor:pointer;}
   #btn-voz.escuchando{background:#f472b6;color:#0d0d14;animation:vozPulso 1s ease-in-out infinite;}
   @keyframes vozPulso{0%,100%{opacity:1}50%{opacity:.55}}
-  #btn-pausa{background:var(--card2);color:#fbbf24;
-    border:1.5px solid #fbbf24;border-radius:11px;font-size:.85rem;font-weight:700;
-    padding:7px 10px;cursor:pointer;}
+  /* Pausa: junto a la respuesta, más grande y con más margen */
+  #btn-pausa.btn-pausa-respuesta{display:block;width:100%;box-sizing:border-box;
+    background:var(--card2);color:#fbbf24;border:2px solid #fbbf24;
+    border-radius:12px;font-size:1rem;font-weight:700;padding:12px 14px;
+    cursor:pointer;margin:14px 0 0;letter-spacing:.2px;}
   #q-mas{font-size:.95rem;margin:8px 0 0;white-space:pre-wrap;color:#34d399;
     background:rgba(52,211,153,.08);border-radius:9px;padding:8px 10px;}
   #q-web,.web-res{font-size:.9rem;margin:8px 0 0;white-space:pre-wrap;color:#4a9eff;
@@ -199,6 +223,13 @@
   .tema-lista li{margin-bottom:6px;}
   .tema-lista li.t-li-mat{background:#14532d;border-radius:8px;padding:6px 10px;color:#86efac;font-weight:600;}
   .tema-lista li.t-li-prog{background:#4a1d2e;border-radius:8px;padding:6px 10px;color:#f0b6d0;font-weight:600;}
+
+  /* ---- Morado sobre fondo oscuro: fondo más claro detrás (opción B) ---- */
+  #n-2:not(.sel){background:rgba(167,139,250,.16);}
+  .num-presets .rect:not(.sel){background:rgba(124,108,240,.16);}
+  .tema summary{background:rgba(124,108,240,.16);border-radius:8px;padding:6px 8px;display:block;}
+  .ultimo .cab{background:rgba(124,108,240,.16);border-radius:8px;padding:6px 8px;display:block;}
+
   #js-check{position:fixed;top:0;left:0;right:0;z-index:9999;background:#7f1d1d;color:#fff;
     padding:14px 16px;font-size:.9rem;text-align:center;}
   #err-overlay{display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;
@@ -224,29 +255,27 @@
 
 <!-- ============================ MENÚ ============================ -->
 <section id="pantalla-menu" class="pantalla activa">
-  <div class="caja">
+  <div class="caja caja-menu">
     <h1>Simulador Examen Alignerr</h1>
-    <p class="sub">Práctica para el examen de ingreso · Matemáticas y Programación</p>
-    <button class="primario" id="btn-instalar">📲 Instalar app</button>
-    <button class="secundario" id="btn-pantalla" style="margin-top:8px">⛶ Pantalla completa</button>
-    <p class="nota" id="instalar-msg" style="display:none;color:#fbbf24;font-weight:bold"></p>
 
-    <div class="card">
-      <h2 style="margin-top:0">Modo de estudio</h2>
+    <!-- Resumen de estadísticas (visible en el menú, sin scroll) -->
+    <div class="card resumen-est">
+      <div class="res-linea" id="res-mat"></div>
+      <div class="res-linea" id="res-prog"></div>
+    </div>
+
+    <div class="card card-menu">
       <div class="fila">
         <button class="rect" id="m-mat" style="--c:#4a9eff">Matemáticas</button>
         <button class="rect" id="m-prog" style="--c:#ff9f43">Programación</button>
       </div>
 
-      <h2>Dificultad (marca una o varias)</h2>
-      <div class="fila">
+      <div class="fila" style="margin-top:6px">
         <button class="rect" id="n-1" style="--c:#22d3ee">Medio</button>
         <button class="rect" id="n-2" style="--c:#a78bfa">Difícil</button>
         <button class="rect" id="n-3" style="--c:#f472b6">Muy difícil</button>
       </div>
-      <div class="contador" id="contador-cat"></div>
 
-      <h2>Número de preguntas</h2>
       <div class="num-presets" id="num-presets">
         <button class="rect" data-n="5" style="--c:#7c6cf0">5</button>
         <button class="rect" data-n="10" style="--c:#7c6cf0">10</button>
@@ -259,41 +288,48 @@
                placeholder="Ingresa la cantidad deseada" onfocus="this.select()">
         <span class="num-val">preguntas</span>
       </div>
-      <p class="nota" style="font-style:italic;margin-top:4px">✏️ El 5 es solo un ejemplo: toca el número y escribe la cantidad que quieras (de 1 a 200).</p>
 
       <button class="primario" id="btn-comenzar">Comenzar examen</button>
       <p class="nota" id="contador-disp"></p>
 
-      <h2>Temporizador</h2>
-      <select id="timer">
-        <option>Sin límite</option>
-        <option>30 s por pregunta</option>
-        <option>60 s por pregunta</option>
-        <option>90 s por pregunta</option>
-        <option>120 s por pregunta</option>
-        <option>5 min total</option>
-        <option>10 min total</option>
-        <option>15 min total</option>
-        <option>20 min total</option>
-        <option>30 min total</option>
-      </select>
+      <div class="fila" style="margin-top:6px;align-items:center">
+        <label for="timer" class="lbl">⏱ Tiempo:</label>
+        <select id="timer" style="flex:1">
+          <option>Sin límite</option>
+          <option>30 s por pregunta</option>
+          <option>60 s por pregunta</option>
+          <option>90 s por pregunta</option>
+          <option>120 s por pregunta</option>
+          <option>5 min total</option>
+          <option>10 min total</option>
+          <option>15 min total</option>
+          <option>20 min total</option>
+          <option>30 min total</option>
+        </select>
+      </div>
+    </div>
 
-      <div class="fila" style="margin-top:6px">
+    <!-- Acceso a secciones: Estadísticas y Herramientas -->
+    <div class="fila-botones">
+      <button class="secundario grande" id="btn-stats">📊 Estadísticas</button>
+      <button class="secundario grande" id="btn-herr">🧰 Herramientas</button>
+    </div>
+    <p class="nota" style="text-align:center;margin-top:6px;color:var(--sub)">Versión <span id="ver-num"></span></p>
+  </div>
+</section>
+
+<!-- ========================== HERRAMIENTAS ========================== -->
+<section id="pantalla-herr" class="pantalla">
+  <div class="caja">
+    <h1>🧰 Herramientas</h1>
+
+    <div class="card">
+      <h2 style="margin-top:0">Voz</h2>
+      <div class="fila">
         <button class="rect" id="btn-autoleer" style="--c:#34d399">🔊 Leer pregunta automática: SÍ</button>
       </div>
       <div class="fila" style="margin-top:6px">
-        <label for="inp-gemini" style="flex:0 0 auto;color:var(--sub);font-size:.85rem;align-self:center">🔑 Gemini:</label>
-        <input type="password" id="inp-gemini" placeholder="Pega aquí tu clave de Gemini (opcional)" autocomplete="off">
-      </div>
-      <div class="fila" style="margin-top:6px">
-        <button class="rect" id="btn-guardar-gemini" style="--c:#f59e0b">💾 Guardar clave de Gemini</button>
-      </div>
-      <div class="fila" style="margin-top:6px">
-        <label for="inp-sync" style="flex:0 0 auto;color:var(--sub);font-size:.85rem;align-self:center">☁️ Código:</label>
-        <input type="text" id="inp-sync" placeholder="Palabra para sincronizar (la misma en los dos sitios)" autocomplete="off">
-      </div>
-      <div class="fila" style="margin-top:6px">
-        <button class="rect" id="btn-sync" style="--c:#38bdf8">☁️ Sincronizar</button>
+        <button class="rect" id="btn-vozauto" style="--c:#f472b6">🎤 Responder por voz automático: SÍ</button>
       </div>
       <div class="fila" style="margin-top:6px">
         <label for="sel-vel" style="flex:0 0 auto;color:var(--sub);font-size:.85rem;align-self:center">🐢 Velocidad:</label>
@@ -303,13 +339,21 @@
           <option value="1.2">Rápida</option>
         </select>
       </div>
-      <div class="fila" style="margin-top:6px">
-        <button class="rect" id="btn-vozauto" style="--c:#f472b6">🎤 Responder por voz automático: SÍ</button>
-      </div>
+    </div>
 
-<div class="card" style="margin-top:14px">
+    <div class="card" style="margin-top:14px">
+      <h2 style="margin-top:0">Sincronizar</h2>
+      <div class="fila">
+        <label for="inp-sync" style="flex:0 0 auto;color:var(--sub);font-size:.85rem;align-self:center">☁️ Código:</label>
+        <input type="text" id="inp-sync" placeholder="Palabra para sincronizar (la misma en los dos sitios)" autocomplete="off">
+      </div>
+      <div class="fila" style="margin-top:6px">
+        <button class="rect" id="btn-sync" style="--c:#38bdf8">☁️ Sincronizar</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
       <h2 style="margin-top:0">Copias de seguridad</h2>
-      <p class="nota">Exporta tus estadísticas para pasarlas a otra versión o guardarlas.</p>
       <div class="fila-botones">
         <button class="secundario" id="btn-exportar">📤 Exportar estadísticas</button>
         <button class="secundario" id="btn-importar">📥 Importar estadísticas</button>
@@ -317,19 +361,46 @@
       <input type="file" id="file-importar" accept=".json,application/json" style="display:none">
       <div id="s-export-msg" style="margin-top:8px"></div>
     </div>
-    <div class="fila-botones">
-        <button class="secundario" id="btn-stats">Estadísticas</button>
+
+    <div class="card" style="margin-top:14px">
+      <h2 style="margin-top:0">Gemini</h2>
+      <div class="fila">
+        <input type="password" id="inp-gemini" placeholder="Pega aquí tu clave de Gemini (opcional)" autocomplete="off">
+      </div>
+      <div class="fila" style="margin-top:6px">
+        <button class="rect" id="btn-guardar-gemini" style="--c:#f59e0b">💾 Guardar clave de Gemini</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h2 style="margin-top:0">Banco de preguntas</h2>
+      <div class="contador" id="contador-cat"></div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h2 style="margin-top:0">Estudio</h2>
+      <div class="fila-botones">
         <button class="secundario" id="btn-desafios">⚔️ Desafíos</button>
         <button class="secundario" id="btn-olvidos">🧠 Olvido</button>
         <button class="secundario" id="btn-temario">📚 Temario</button>
-        <button class="peligro" id="btn-limpio">🧹 Modo limpio</button>
       </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h2 style="margin-top:0">Otros</h2>
       <div class="fila-botones">
-        <button class="secundario" id="btn-reportar-menu">⚠️ Reportar / proponer</button>
-        <button class="secundario" id="btn-reportes-menu">📋 Reportes (0)</button>
+        <button class="secundario" id="btn-instalar" style="font-size:.8rem;padding:7px 12px">📲 Instalar app</button>
+        <button class="secundario" id="btn-comentar-menu">💬 Comentar / proponer</button>
+        <button class="secundario" id="btn-reportes-menu">📋 Comentarios (0)</button>
       </div>
-      <p class="nota">Las preguntas se eligen al azar y las opciones se barajan en cada intento.</p>
-      <p class="nota" style="text-align:center;margin-top:10px;color:var(--sub)">Versión <span id="ver-num"></span></p>
+      <div class="fila-botones" style="margin-top:8px">
+        <button class="peligro" id="btn-limpio">🧹 Modo limpio (borra estadísticas y marcas)</button>
+      </div>
+      <p class="nota" id="instalar-msg" style="display:none;color:#fbbf24;font-weight:bold"></p>
+    </div>
+
+    <div class="fila-botones">
+      <button class="secundario" id="btn-volver-herr">← Volver al menú</button>
     </div>
   </div>
 </section>
@@ -348,10 +419,9 @@
     <p id="q-pregunta"></p>
     <div class="fila-marcas">
       <button id="btn-leer">🔊 Leer pregunta</button>
-      <button id="btn-pausa" style="display:none">⏸ Pausa</button>
       <button id="btn-voz">🎤 Responder por voz</button>
       <button id="btn-desafio">⚔️ Marcar como Desafío (5×)</button>
-      <button id="btn-reportar">⚠️ Reportar</button>
+      <button id="btn-reportar">💬 Comentar / proponer</button>
       <button id="btn-saltar">⏭ Saltar</button>
       <button id="btn-tranquilo">📖 Leer tranquilo</button>
     </div>
@@ -361,38 +431,38 @@
     <div id="q-mas"></div>
     <button id="btn-masinfo">❓ Más explicación</button>
     <button id="btn-repetir-exp">🔁 Repetir explicación</button>
-    <button id="btn-silenciar">🔇 Silenciar voz</button>
     <div id="q-web" style="display:none"></div>
+    <button id="btn-pausa" class="btn-pausa-respuesta" style="display:none">⏸ Pausar lectura de la respuesta</button>
     <button id="btn-siguiente" disabled>Siguiente →</button>
   </div>
 </section>
 
-<!-- ========================== REPORTAR ========================== -->
+<!-- ======================== COMENTAR / PROPONER ======================== -->
 <section id="pantalla-reporte" class="pantalla">
   <div class="caja">
-    <h1>⚠️ Reportar</h1>
-    <p class="nota">Indica si una pregunta tiene un error (con tu solución propuesta) o propón una pregunta nueva.</p>
+    <h1>💬 Comentar / proponer</h1>
+    <p class="nota">Escribe o dicta tu comentario: un error de la pregunta (con tu solución) o una pregunta nueva. Si dictas, puedes escribir a la vez; el micrófono ya está activo.</p>
     <div id="r-pregunta-ctx" class="card" style="display:none"></div>
-    <label for="r-texto" style="display:block;margin:10px 0 4px;color:var(--sub)">Tu propuesta:</label>
+    <label for="r-texto" style="display:block;margin:10px 0 4px;color:var(--sub)">Tu comentario / propuesta:</label>
     <textarea id="r-texto" rows="5" style="width:100%;box-sizing:border-box;background:#14141f;color:#e2e8f0;border:1px solid #333;border-radius:10px;padding:10px;font-size:1rem"
-      placeholder="Escribe aquí tu solución propuesta o la pregunta nueva (pregunta, opciones y respuesta correcta)."></textarea>
+      placeholder="Escribe aquí tu propuesta o la pregunta nueva (pregunta, opciones y respuesta correcta)."></textarea>
     <div class="fila-marcas" style="margin-top:10px">
-      <button id="btn-r-dictar">🎤 Dictar</button>
-      <button class="primario" id="btn-r-guardar">💾 Guardar reporte</button>
+      <button id="btn-r-dictar">🎤 Dictar (activo)</button>
+      <button class="primario" id="btn-r-guardar">💾 Guardar comentario</button>
       <button class="secundario" id="btn-r-cancelar">✖ Cancelar</button>
     </div>
     <p id="r-msg"></p>
   </div>
 </section>
 
-<!-- ========================== REPORTES ========================== -->
+<!-- ========================== COMENTARIOS ========================== -->
 <section id="pantalla-reportes" class="pantalla">
   <div class="caja">
-    <h1>📋 Reportes</h1>
-    <p class="nota">Aquí están tus reportes. Pulsa "Enviar reportes" para mandarlos, o cópialos/expórtalos.</p>
+    <h1>📋 Comentarios</h1>
+    <p class="nota">Tus comentarios y propuestas. Pulsa "Enviar comentarios" para mandarlos al asistente, o cópialos/expórtalos.</p>
     <div id="rep-lista"></div>
     <div class="fila-botones">
-      <button class="primario" id="btn-rep-enviar">📤 Enviar reportes</button>
+      <button class="primario" id="btn-rep-enviar">📤 Enviar comentarios</button>
       <button class="secundario" id="btn-rep-exportar">📤 Exportar todo</button>
       <button class="secundario" id="btn-rep-volver">← Volver</button>
     </div>
@@ -535,7 +605,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.29";
+const VERSION = "2.30";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -777,10 +847,11 @@ function armarProteccionDesbloqueo(){
   clearTimeout(desbloqueoTimer);
   desbloqueoTimer = setTimeout(()=>{ bloqueoToques = false; }, 3000);
   if(("speechSynthesis" in window) && !speechSynthesis.speaking){
+    const enQuiz = $("pantalla-quiz").classList.contains("activa");
+    // "Ya puedes responder" solo si todavía no se ha respondido esta pregunta
+    const sinResponder = enQuiz && !(E.respondidas && E.respondidas.has(E.actual));
     const u = new SpeechSynthesisUtterance(
-      $("pantalla-quiz").classList.contains("activa")
-        ? "Pantalla desbloqueada. Ya puedes responder."
-        : "Pantalla desbloqueada.");
+      sinResponder ? "Pantalla desbloqueada. Ya puedes responder." : "Pantalla desbloqueada.");
     u.lang = "es-ES"; aplicarVoz(u);
     speechSynthesis.speak(u);
   }
@@ -850,8 +921,8 @@ function actualizarPausa(){
   const b = $("btn-pausa");
   if(!b) return;
   if(!("speechSynthesis" in window)){ b.style.display = "none"; return; }
-  if(speechSynthesis.paused){ b.style.display = ""; b.textContent = "▶ Reanudar"; }
-  else if(speechSynthesis.speaking){ b.style.display = ""; b.textContent = "⏸ Pausa"; }
+  if(speechSynthesis.paused){ b.style.display = ""; b.textContent = "▶ Reanudar lectura"; }
+  else if(speechSynthesis.speaking){ b.style.display = ""; b.textContent = "⏸ Pausar lectura de la respuesta"; }
   else b.style.display = "none";
 }
 function leer(texto, btn, alTerminar){
@@ -974,7 +1045,15 @@ function geminiKey(){
 // Muestra la explicación DENTRO de la app, sin abrir ninguna ventana.
 // Si hay clave de Gemini, se la pide a Gemini; si no, usa Wikipedia (como antes).
 const GEMINI_MODELOS = ["gemini-3.5-flash-lite","gemini-3.1-flash-lite","gemini-3.8-flash"];
-async function explicarConGemini(q, zona, btn){
+// Cada pulsación de "Más explicación" usa un enfoque distinto (y rota el modelo)
+const ENFOQUES_EXPLICACION = [
+  "Explica de forma breve y clara, en español, la respuesta a esta pregunta de un test: \"{P}\". Da la explicación en 2 o 3 frases sencillas.",
+  "Explica en español, breve y claro, la respuesta a esta pregunta de un test: \"{P}\". Añade un ejemplo práctico que ayude a entenderlo.",
+  "Explica en español, breve y claro, la respuesta a esta pregunta de un test: \"{P}\". Explícalo paso a paso, como si el alumno no supiera nada del tema.",
+  "Explica en español, breve y claro, la respuesta a esta pregunta de un test: \"{P}\". Céntrate en por qué las otras opciones son incorrectas.",
+  "Explica en español, breve y claro, la respuesta a esta pregunta de un test: \"{P}\". Da una regla o truco para recordarlo."
+];
+async function explicarConGemini(q, zona, btn, variante){
   if(!zona) return;
   zona.style.display = "";
   const key = geminiKey();
@@ -985,12 +1064,14 @@ async function explicarConGemini(q, zona, btn){
   zona.classList.add("globo-ia");
   zona.textContent = "🤖 Buscando la explicación...";
   if(btn) btn.disabled = true;
-  const prompt = "Explica de forma breve y clara, en español, la respuesta a esta pregunta de un test: \""+
-    q.pregunta+"\". Da la explicación en 2 o 3 frases sencillas.";
+  const v = Math.max(0, (variante|0) - 1);
+  const prompt = ENFOQUES_EXPLICACION[v % ENFOQUES_EXPLICACION.length].replace("{P}", q.pregunta);
+  const giro = v % GEMINI_MODELOS.length;
+  const modelosRotados = GEMINI_MODELOS.slice(giro).concat(GEMINI_MODELOS.slice(0, giro));
   let motivo = "conexion";
   try{
     modelos:
-    for(const modelo of GEMINI_MODELOS){
+    for(const modelo of modelosRotados){
       // Primero intentamos sin "pensar" (más rápido). Si el modelo no lo admite,
       // reintentamos igual que antes (sin configuración).
       const configs = [ {thinkingConfig:{thinkingBudget:0}, maxOutputTokens:400}, null ];
@@ -1052,7 +1133,7 @@ async function explicarConGemini(q, zona, btn){
   const rb = document.createElement("button");
   rb.className = "secundario"; rb.style.marginTop = "6px";
   rb.textContent = "🔄 Reintentar";
-  rb.onclick = ()=>{ explicarConGemini(q, zona, btn); };
+  rb.onclick = ()=>{ explicarConGemini(q, zona, btn, variante); };
   zona.appendChild(document.createElement("br"));
   zona.appendChild(rb);
   leerNuevo(aviso);
@@ -1313,7 +1394,7 @@ function actualizarContadorMenu(){
 function guardarReportes(lista){ localStorage.setItem("alignerr-simulador-reportes-v1", JSON.stringify(lista)); }
 function actualizarContadorReportes(){
   const b = $("btn-reportes-menu");
-  if(b) b.textContent = reportes.length ? "📋 Reportes ("+reportes.length+")" : "📋 Reportes (0)";
+  if(b) b.textContent = reportes.length ? "📋 Comentarios ("+reportes.length+")" : "📋 Comentarios (0)";
 }
 const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 function abrirReporte(conPregunta){
@@ -1337,8 +1418,11 @@ function abrirReporte(conPregunta){
   if(reporteDesdeQuiz && E.intervalo){ cancelarTimer(); reportePausaTimer = true; }
   mostrar("pantalla-reporte");
   $("r-texto").focus();
+  // el micrófono se activa solo al abrir: puedes dictar y escribir a la vez
+  iniciarDictadoComentario();
 }
 function cerrarReporte(){
+  pararDictadoComentario();
   if(reporteDesdeQuiz){
     if(reportePausaTimer && E.intervalo === null &&
        (E.tipoTimer === "total" || !E.respondidas.has(E.actual))) ponerTimer();
@@ -1348,7 +1432,7 @@ function cerrarReporte(){
   }
 }
 function formatoReporte(r, n){
-  let s = "REPORTE "+n+" — "+r.fecha+"\n";
+  let s = "COMENTARIO "+n+" — "+r.fecha+"\n";
   if(r.pregunta){
     s += "Pregunta: "+r.pregunta+"\n";
     if(r.tema) s += "Tema: "+TEMAS[r.tema]+"\n";
@@ -1361,20 +1445,20 @@ function formatoReporte(r, n){
   s += "Propuesta: "+r.texto;
   return s;
 }
-/* Envío de reportes al asistente (ntfy.sh, gratis y anónimo) */
+/* Envío de comentarios al asistente (ntfy.sh, gratis y anónimo) */
 const TOPIC_REPORTES = "alignerr-reportes-7k3q9v2m";
 function enviarReporteNtfy(r, n){
   const txt = formatoReporte(r, n || (reportes.indexOf(r)+1));
   return fetch("https://ntfy.sh/"+TOPIC_REPORTES, {
     method: "POST",
-    headers: { "Title": "Reporte Alignerr", "Tags": "memo" },
+    headers: { "Title": "Comentario Alignerr", "Tags": "memo" },
     body: txt
   });
 }
 function mostrarReportes(){
   const lista = $("rep-lista");
   if(reportes.length === 0){
-    lista.innerHTML = '<p class="nota">No hay reportes guardados.</p>';
+    lista.innerHTML = '<p class="nota">No hay comentarios guardados.</p>';
   }else{
     lista.innerHTML = reportes.map((r,i)=>{
       const ctx = r.pregunta
@@ -1399,8 +1483,8 @@ function copiarReporte(i){
   const txt = formatoReporte(reportes[i], i+1);
   const ok = ()=>{
     $("rep-lista").insertAdjacentHTML("afterbegin",
-      '<p class="nota" style="color:var(--ok)">✅ Reporte copiado. Pégalo en Telegram.</p>');
-    leerNuevo("Reporte copiado. Pégalo en Telegram.");
+      '<p class="nota" style="color:var(--ok)">✅ Comentario copiado. Pégalo en Telegram.</p>');
+    leerNuevo("Comentario copiado. Pégalo en Telegram.");
   };
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(txt).then(ok).catch(()=>copiarFallback(txt, ok));
@@ -1601,6 +1685,23 @@ function mostrar(id){
   document.querySelectorAll(".pantalla").forEach(s=>s.classList.remove("activa"));
   $(id).classList.add("activa");
   window.scrollTo(0,0);
+  if(id === "pantalla-menu") pintarResumenMenu();
+}
+
+/* Resumen histórico en el menú: % de aciertos y nº de preguntas por rama */
+function pintarResumenMenu(){
+  const d = cargarEstadisticas();
+  [["mat","res-mat"],["prog","res-prog"]].forEach(([t,elId])=>{
+    const el = $(elId);
+    if(!el) return;
+    const v = (d.por_tema||{})[t];
+    const preg = v ? (v.preguntas||0) : 0;
+    const ac = v ? (v.aciertos||0) : 0;
+    const pct = preg ? Math.round(100*ac/preg) : 0;
+    el.innerHTML = "<span style='color:"+COLOR_TEMA[t]+"'>"+TEMAS[t]+":</span> "+
+      (preg ? "<b>"+pct+"%</b>" : "<span class='vacio'>—</span>")+
+      " <span style='color:var(--sub)'>("+preg+(preg===1?" pregunta":" preguntas")+")</span>";
+  });
 }
 
 /* ============================== MENÚ ============================== */
@@ -1618,8 +1719,8 @@ function pintarContadores(){
   const nMat = (por["mat-1"]||0)+(por["mat-2"]||0)+(por["mat-3"]||0);
   const nProg = (por["prog-1"]||0)+(por["prog-2"]||0)+(por["prog-3"]||0);
   $("contador-cat").innerHTML =
-    "Matemáticas: <b>"+nMat+"</b> preguntas (Medio "+por["mat-1"]+" · Difícil "+por["mat-2"]+" · Muy difícil "+por["mat-3"]+")<br>"+
-    "Programación: <b>"+nProg+"</b> preguntas (Medio "+por["prog-1"]+" · Difícil "+por["prog-2"]+" · Muy difícil "+por["prog-3"]+")";
+    "Matemáticas: <b>"+nMat+"</b> (Medio "+por["mat-1"]+" · Difícil "+por["mat-2"]+" · Muy difícil "+por["mat-3"]+")<br>"+
+    "Programación: <b>"+nProg+"</b> (Medio "+por["prog-1"]+" · Difícil "+por["prog-2"]+" · Muy difícil "+por["prog-3"]+")";
   const vistos = new Set();
   let disp = 0;
   BANCO.forEach(q=>{
@@ -1632,7 +1733,7 @@ function pintarContadores(){
     el.innerHTML = "⚠ No hay preguntas para esa combinación. Elige otra.";
     el.className = "nota aviso";
   } else {
-    el.innerHTML = "Preguntas disponibles con tu selección: <b>"+disp+"</b> (sin repetir en un examen)";
+    el.innerHTML = "Disponibles: <b>"+disp+"</b> (sin repetir)";
     el.className = "nota";
   }
 }
@@ -1686,25 +1787,14 @@ const btnGuardarGemini = $("btn-guardar-gemini");
 if(btnGuardarGemini) btnGuardarGemini.onclick = ()=>{ guardarClaveGemini(true); };
 const verNum = $("ver-num");
 if(verNum) verNum.textContent = VERSION;
-const btnPantalla = $("btn-pantalla");
-if(btnPantalla) btnPantalla.onclick = ()=>{
+/* Pantalla completa: sin botón, se activa al empezar el examen (primer toque) */
+function pedirPantallaCompleta(){
   const el = document.documentElement;
   const ya = document.fullscreenElement || document.webkitFullscreenElement;
-  if(ya){
-    const salir = document.exitFullscreen || document.webkitExitFullscreen;
-    if(salir) salir.call(document);
-    leerNuevo("Pantalla normal.");
-  }else{
-    const pedir = el.requestFullscreen || el.webkitRequestFullscreen;
-    if(pedir){
-      Promise.resolve(pedir.call(el))
-        .then(()=>leerNuevo("Pantalla completa."))
-        .catch(()=>leerNuevo("No se pudo poner en pantalla completa en este navegador."));
-    }else{
-      leerNuevo("Este navegador no permite pantalla completa. Instala la app para verla sin la barra de direcciones.");
-    }
-  }
-};
+  if(ya) return;
+  const pedir = el.requestFullscreen || el.webkitRequestFullscreen;
+  if(pedir){ try{ Promise.resolve(pedir.call(el)).catch(()=>{}); }catch(e){} }
+}
 
 /* ===================== SINCRONIZACIÓN (ntfy.sh, gratis) ===================== */
 const CLAVE_SYNC = "alignerr-simulador-sync-code-v1";
@@ -1815,8 +1905,10 @@ function programarEscuchaAuto(){
     iniciarReconocimiento(true);
   }, espera);
 }
-$("btn-comenzar").onclick = iniciar;
+$("btn-comenzar").onclick = ()=>{ pedirPantallaCompleta(); iniciar(); };
 $("btn-stats").onclick = mostrarEstadisticas;
+$("btn-herr").onclick = ()=>{ mostrar("pantalla-herr"); };
+$("btn-volver-herr").onclick = ()=>{ mostrar("pantalla-menu"); };
 $("btn-desafios").onclick = mostrarDesafios;
 $("btn-olvidos").onclick = mostrarOlvido;
 $("btn-temario").onclick = ()=>{ mostrarTemario(); mostrar("pantalla-temario"); };
@@ -2181,13 +2273,6 @@ function pararVoz(){
   actualizarPausa();
   soltarWakeLock();
 }
-// Corta solo la lectura en voz (sin tocar el micrófono), para el botón "Silenciar voz".
-function silenciarVoz(){
-  if("speechSynthesis" in window) speechSynthesis.cancel();
-  vozToken++;
-  actualizarPausa();
-  soltarWakeLock();
-}
 $("btn-voz").onclick = responderPorVoz;
 $("btn-saltar").onclick = ()=>{
   if(bloqueoToques) return;
@@ -2210,17 +2295,18 @@ $("btn-pausa").onclick = ()=>{
 $("btn-masinfo").onclick = ()=>{
   const q = E.preguntas[E.actual];
   if(!q) return;
-  explicarConGemini(q, $("q-web"), $("btn-masinfo"));
+  // cada pulsación pide una explicación distinta a Gemini
+  E.masInfoN = (E.masInfoN || 0) + 1;
+  explicarConGemini(q, $("q-web"), $("btn-masinfo"), E.masInfoN);
 };
-$("btn-silenciar").onclick = ()=>{ silenciarVoz(); };
 $("btn-repetir-exp").onclick = ()=>{
   const q = E.preguntas[E.actual];
   if(!q) return;
-  if(!E.respondidas.has(E.actual)){
-    leerNuevo("Responde primero y luego podrás repetir la explicación.");
-    return;
-  }
-  const texto = (ultimaCorrecta ? "¡Correcto! " : "Incorrecto. Respuesta correcta: "+q.opciones[q.correcta]+". ")+q.explicacion;
+  // se puede repetir las veces que haga falta, antes o después de responder
+  const texto = (E.respondidas.has(E.actual)
+      ? (ultimaCorrecta ? "¡Correcto! " : "Incorrecto. Respuesta correcta: "+q.opciones[q.correcta]+". ")
+      : "")
+    + q.explicacion;
   leerNuevo(texto);
 };
 $("btn-volver").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-menu"); };
@@ -2245,22 +2331,22 @@ $("btn-rep-desafio").onclick = ()=>{
 };
 $("btn-rep-volver").onclick = ()=>{ mostrar("pantalla-res"); };
 $("btn-reportar").onclick = ()=>{ abrirReporte(true); };
-$("btn-reportar-menu").onclick = ()=>{ abrirReporte(false); };
+$("btn-comentar-menu").onclick = ()=>{ abrirReporte(false); };
 $("btn-reportes-menu").onclick = ()=>{ mostrarReportes(); };
 $("btn-rep-volver").onclick = ()=>{ mostrar("pantalla-menu"); };
 $("btn-rep-enviar").onclick = ()=>{
-  if(reportes.length === 0){ leerNuevo("No hay reportes que enviar."); return; }
-  leerNuevo("Enviando reportes...");
+  if(reportes.length === 0){ leerNuevo("No hay comentarios que enviar."); return; }
+  leerNuevo("Enviando comentarios...");
   Promise.all(reportes.map((r,i)=>enviarReporteNtfy(r,i+1)))
     .then(()=>{
       $("rep-lista").insertAdjacentHTML("afterbegin",
-        '<p class="nota" style="color:var(--ok)">✅ Reportes enviados.</p>');
-      leerNuevo("Reportes enviados.");
+        '<p class="nota" style="color:var(--ok)">✅ Comentarios enviados al asistente.</p>');
+      leerNuevo("Comentarios enviados al asistente.");
     })
     .catch(()=>{
       $("rep-lista").insertAdjacentHTML("afterbegin",
         '<p class="nota">⚠ No se pudieron enviar. Comprueba tu conexión.</p>');
-      leerNuevo("No se pudieron enviar los reportes. Comprueba tu conexión.");
+      leerNuevo("No se pudieron enviar los comentarios. Comprueba tu conexión.");
     });
 };
 $("btn-rep-exportar").onclick = ()=>{
@@ -2269,43 +2355,75 @@ $("btn-rep-exportar").onclick = ()=>{
     const blob = new Blob([txt], {type:"text/plain;charset=utf-8"});
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "reportes_alignerr.txt";
+    a.download = "comentarios_alignerr.txt";
     document.body.appendChild(a); a.click();
     setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 2000);
-    leerNuevo("Reportes exportados. El archivo se ha guardado en Descargas.");
+    leerNuevo("Comentarios exportados. El archivo se ha guardado en Descargas.");
   }catch(e){
     $("rep-lista").insertAdjacentHTML("afterbegin",
       '<p class="nota">⚠ No se pudo exportar: '+esc(e.message)+'</p>');
   }
 };
-$("btn-r-dictar").onclick = ()=>{
+/* ---- Dictado del comentario: escribe y dicta a la vez ---- */
+let dictadoRec = null;
+let dictadoActivo = false;
+function iniciarDictadoComentario(){
   if(!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)){
     $("r-msg").textContent = "Tu navegador no permite dictado por voz.";
     return;
   }
+  if(dictadoActivo) return;
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const rec = new SR();
+  dictadoRec = rec;
   rec.lang = "es-ES";
+  rec.continuous = true;                 // dictado continuo
   rec.interimResults = false;
   rec.maxAlternatives = 1;
   rec.onresult = ev=>{
-    const t = ev.results[0][0].transcript;
     const ta = $("r-texto");
-    ta.value = (ta.value ? ta.value+" " : "") + t;
-    ta.focus();
+    let fin = "";
+    for(let i = ev.resultIndex; i < ev.results.length; i++){
+      if(ev.results[i].isFinal) fin += ev.results[i][0].transcript + " ";
+    }
+    if(fin.trim()){
+      const pos = ta.selectionStart;
+      // añade al final del texto ya escrito a mano o dictado
+      ta.value = (ta.value ? ta.value + " " : "") + fin.trim();
+      try{ ta.selectionStart = ta.selectionEnd = ta.value.length; }catch(e){}
+    }
   };
   rec.onerror = ev=>{
     if(ev.error === "not-allowed" || ev.error === "service-not-allowed"){
       $("r-msg").textContent = "Permiso de micrófono denegado. Actívalo en los ajustes del navegador: Configuración de sitios, Micrófono.";
+      dictadoActivo = false;
+      $("btn-r-dictar").textContent = "🎤 Dictar";
     }
   };
-  rec.start();
+  rec.onend = ()=>{
+    // dictado continuo: si se para solo, se reinicia
+    if(dictadoActivo){ try{ rec.start(); }catch(e){} }
+  };
+  try{
+    rec.start();
+    dictadoActivo = true;
+    $("btn-r-dictar").textContent = "🎤 Dictando…";
+  }catch(e){}
+}
+function pararDictadoComentario(){
+  dictadoActivo = false;
+  if(dictadoRec){ try{ dictadoRec.stop(); }catch(e){} dictadoRec = null; }
+  $("btn-r-dictar").textContent = "🎤 Dictar";
+}
+$("btn-r-dictar").onclick = ()=>{
+  if(dictadoActivo) pararDictadoComentario();
+  else iniciarDictadoComentario();
 };
 $("btn-r-guardar").onclick = ()=>{
   const texto = $("r-texto").value.trim();
   if(!texto){
-    $("r-msg").textContent = "⚠ Escribe tu propuesta antes de guardar.";
-    leerNuevo("Escribe tu propuesta antes de guardar.");
+    $("r-msg").textContent = "⚠ Escribe tu comentario antes de guardar.";
+    leerNuevo("Escribe tu comentario antes de guardar.");
     return;
   }
   const q = reportePregunta;
@@ -2322,8 +2440,8 @@ $("btn-r-guardar").onclick = ()=>{
   actualizarContadorReportes();
   const nuevo = reportes[reportes.length-1];
   enviarReporteNtfy(nuevo, reportes.length).catch(()=>{});
-  $("r-msg").textContent = "✅ Reporte guardado y enviado.";
-  leerNuevo("Reporte guardado y enviado.");
+  $("r-msg").textContent = "✅ Comentario guardado y enviado.";
+  leerNuevo("Comentario guardado y enviado.");
   cerrarReporte();
 };
 $("btn-r-cancelar").onclick = ()=>{ cerrarReporte(); };
@@ -2409,8 +2527,8 @@ $("file-importar").onchange = ()=>{
       }
       mostrarEstadisticas();
       actualizarContadorMenu();
-      if(m) m.textContent = "✅ Datos importados correctamente (estadísticas, desafíos, olvidos, más explicación y reportes).";
-      leerNuevo("Datos importados correctamente: estadísticas, desafíos, olvidos, más explicación y reportes.");
+      if(m) m.textContent = "✅ Datos importados correctamente (estadísticas, desafíos, olvidos, más explicación y comentarios).";
+      leerNuevo("Datos importados correctamente: estadísticas, desafíos, olvidos, más explicación y comentarios.");
     }catch(e){
       if(m) m.textContent = "⚠ El archivo no es válido. No se importó nada.";
       leerNuevo("El archivo no es válido. No se importó nada.");
@@ -2615,6 +2733,14 @@ function avisarApuro(){
   tocarTono([1100, 1500], 0.06, "sine");
 }
 
+/* Relámpago de aviso justo antes de pasar a la siguiente pantalla:
+   espera 1 s → relámpago (2 s) → 2 s más → siguiente. */
+function relampagoYAvanzar(idx, esperaAntes){
+  setTimeout(()=>{
+    avisarApuro();
+    setTimeout(()=>avanzarSiSigue(idx), 2000 + 2000);
+  }, (esperaAntes == null ? 1000 : esperaAntes));
+}
 function responder(idx){
   pararVoz();
   if(E.tipoTimer === "pregunta") cancelarTimer();
@@ -2640,17 +2766,15 @@ function responder(idx){
   if(ok){
     const idxRespondida = E.actual;
     const texto = "¡Correcto! "+q.explicacion;
+    let disparado = false;
+    const aviso = ()=>{ if(disparado) return; disparado = true; relampagoYAvanzar(idxRespondida, 1000); };
     if(vozauto){
-      // Esperar a que la voz termine de leer la explicación, dejar 1 segundo
-      // de margen y continuar sola.
-      let avanzado = false;
-      // Al responder NO hay relámpago: solo se espera un segundo tras la voz.
-      const avanzar = ()=>{ if(avanzado) return; avanzado = true; setTimeout(()=>avanzarSiSigue(idxRespondida), 1000); };
-      leerNuevo(texto, avanzar);
-      // Respaldo: si el navegador no avisa del final de la lectura, avanzar igualmente.
-      setTimeout(avanzar, Math.max(2500, texto.length*80));
+      // Al terminar de leer la respuesta: 1 s → relámpago → 2 s → siguiente.
+      leerNuevo(texto, aviso);
+      // Respaldo: si el navegador no avisa del final de la lectura, avisar igualmente.
+      setTimeout(aviso, Math.max(2500, texto.length*80));
     }else{
-      setTimeout(()=>{ avanzarSiSigue(idxRespondida); }, 4000);
+      aviso();
     }
   }else{
     if(vozauto) leerNuevo($("q-feedback").textContent, escucharComando);
@@ -2672,11 +2796,13 @@ function tiempoAgotado(){
   E.respondidas.add(E.actual);
   ultimaCorrecta = false;
   $("btn-siguiente").disabled = false;
-  // Solo cuando se agota el tiempo: relámpago (2 s) y DESPUÉS 3 s antes de avanzar.
-  avisarApuro();
-  if(vozauto) leerNuevo($("q-feedback").textContent, escucharComando);
+  // Al terminar de leer la respuesta: 1 s → relámpago (2 s) → 2 s → siguiente.
   const idxAgotada = E.actual;
-  setTimeout(()=>{ avanzarSiSigue(idxAgotada); }, 2000 + 3000);
+  if(vozauto){
+    leerNuevo($("q-feedback").textContent, ()=>{ escucharComando(); relampagoYAvanzar(idxAgotada, 1000); });
+  }else{
+    relampagoYAvanzar(idxAgotada, 1000);
+  }
 }
 function saltarPregunta(){
   pararVoz();
