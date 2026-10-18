@@ -140,11 +140,13 @@
   .repaso .meta{color:var(--sub);font-size:.74rem;}
   .ok-txt{color:var(--ok);} .bad-txt{color:var(--bad);}
   /* Resultados: todo en una sola vista, sin scroll de página */
-  #pantalla-res{height:100vh;height:100dvh;overflow:hidden;}
+  #pantalla-res{position:fixed;inset:0;height:100vh;height:100dvh;overflow:hidden;}
   #pantalla-res.activa{display:flex;flex-direction:column;}
-  #pantalla-res .caja{display:flex;flex-direction:column;flex:1;min-height:0;padding-bottom:8px;}
-  #pantalla-res .repaso{flex:1;min-height:0;overflow-y:auto;}
+  #pantalla-res .caja{display:flex;flex-direction:column;flex:1;min-height:0;padding-bottom:8px;overflow:hidden;}
+  #pantalla-res .repaso{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;}
   #pantalla-res .fila-botones{flex:0 0 auto;}
+  /* Pantallas que no deben desplazarse nunca (examen y resultados) */
+  body.sin-scroll{overflow:hidden;}
   .centrado{max-width:560px;margin:0 auto;}
   #s-resumen{text-align:center;font-weight:700;font-size:.95rem;margin-bottom:4px;}
   #s-mejor{text-align:center;color:var(--ok);font-size:.9rem;margin-bottom:12px;}
@@ -235,12 +237,13 @@
   #err-overlay{display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;
     background:#7f1d1d;color:#fff;padding:10px 14px;font-size:.8rem;text-align:center;}
   #flash-aviso{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9997;}
-  #flash-aviso.on{animation:relampago 2s ease-out;}
+  #flash-aviso{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9997;}
+  #flash-aviso.on{animation:relampago 1s ease-out;}
   @keyframes relampago{
     0%{opacity:0;} 4%{opacity:.6;} 8%{opacity:.05;}
     50%{opacity:.5;} 62%{opacity:.06;} 82%{opacity:.3;} 100%{opacity:0;}
   }
-  body.fondo-aviso{animation:fondoAviso 2s ease-out;}
+  body.fondo-aviso{animation:fondoAviso 1s ease-out;}
   @keyframes fondoAviso{
     0%{filter:brightness(1);} 5%{filter:brightness(2.2);} 10%{filter:brightness(1.1);}
     55%{filter:brightness(1.8);} 100%{filter:brightness(1);}
@@ -343,6 +346,7 @@
 
     <div class="card" style="margin-top:14px">
       <h2 style="margin-top:0">Sincronizar</h2>
+      <p class="nota">Sirve para <b>recuperar tus estadísticas, desafíos y olvidos</b> si usas la app en más de un dispositivo (o si cambias de móvil). Escribe la misma palabra en los dos sitios y pulsa Sincronizar: se juntan los datos de los dos.</p>
       <div class="fila">
         <label for="inp-sync" style="flex:0 0 auto;color:var(--sub);font-size:.85rem;align-self:center">☁️ Código:</label>
         <input type="text" id="inp-sync" placeholder="Palabra para sincronizar (la misma en los dos sitios)" autocomplete="off">
@@ -459,7 +463,7 @@
 <section id="pantalla-reportes" class="pantalla">
   <div class="caja">
     <h1>📋 Comentarios</h1>
-    <p class="nota">Tus comentarios y propuestas. Pulsa "Enviar comentarios" para mandarlos al asistente, o cópialos/expórtalos.</p>
+    <p class="nota">Tus comentarios y propuestas. Al pulsar <b>📤 Enviar comentarios</b> se mandan a un <b>buzón privado que solo lee el asistente</b> (no se publican en ningún sitio ni los ve nadie más). También puedes copiarlos o exportarlos.</p>
     <div id="rep-lista"></div>
     <div class="fila-botones">
       <button class="primario" id="btn-rep-enviar">📤 Enviar comentarios</button>
@@ -605,7 +609,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.30";
+const VERSION = "2.31";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -1325,7 +1329,8 @@ function quitarDeMasInfo(pregunta){
 function actualizarBotonMasInfo(){
   const b = $("btn-masinfo");
   if(!b) return;
-  b.textContent = "❓ Más explicación";
+  // Si ya se ha pedido una explicación de esta pregunta, el botón ofrece otra.
+  b.textContent = E.masInfoN ? "🔄 Otra explicación" : "❓ Más explicación";
   b.classList.remove("en-masinfo");
 }
 function mostrarMasInfoEnQuiz(q){
@@ -1671,7 +1676,8 @@ const E = {
   temporizador:"Sin límite",
   preguntas:[], actual:0, aciertos:0, respuestas:[],
   tipoTimer:null, segundosPregunta:0, minutosTotal:0,
-  tiempoRestante:0, tiempoTotalRestante:0, agotadoTotal:false, intervalo:null
+  tiempoRestante:0, tiempoTotalRestante:0, agotadoTotal:false, intervalo:null,
+  masInfoN:0
 };
 const $ = id => document.getElementById(id);
 
@@ -1684,8 +1690,11 @@ function mostrar(id){
   if(recVoz){ try{ recVoz.stop(); }catch(e){} recVoz = null; actualizarBotonVoz(); }
   document.querySelectorAll(".pantalla").forEach(s=>s.classList.remove("activa"));
   $(id).classList.add("activa");
+  // El examen y los resultados ocupan la pantalla entera y no se desplazan
+  document.body.classList.toggle("sin-scroll", id === "pantalla-res" || id === "pantalla-quiz");
   window.scrollTo(0,0);
   if(id === "pantalla-menu") pintarResumenMenu();
+  pedirPantallaCompleta();
 }
 
 /* Resumen histórico en el menú: % de aciertos y nº de preguntas por rama */
@@ -1787,7 +1796,9 @@ const btnGuardarGemini = $("btn-guardar-gemini");
 if(btnGuardarGemini) btnGuardarGemini.onclick = ()=>{ guardarClaveGemini(true); };
 const verNum = $("ver-num");
 if(verNum) verNum.textContent = VERSION;
-/* Pantalla completa: sin botón, se activa al empezar el examen (primer toque) */
+/* Pantalla completa: se pide en el primer toque y se mantiene todo el tiempo.
+   El navegador exige un toque del usuario, así que se pide en el primer toque
+   en cualquier parte, al cambiar de pantalla y al volver a la app. */
 function pedirPantallaCompleta(){
   const el = document.documentElement;
   const ya = document.fullscreenElement || document.webkitFullscreenElement;
@@ -1795,6 +1806,11 @@ function pedirPantallaCompleta(){
   const pedir = el.requestFullscreen || el.webkitRequestFullscreen;
   if(pedir){ try{ Promise.resolve(pedir.call(el)).catch(()=>{}); }catch(e){} }
 }
+["pointerdown","touchstart","click","keydown"].forEach(ev=>{
+  document.addEventListener(ev, pedirPantallaCompleta, {passive:true});
+});
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) pedirPantallaCompleta(); });
+window.addEventListener("focus", pedirPantallaCompleta);
 
 /* ===================== SINCRONIZACIÓN (ntfy.sh, gratis) ===================== */
 const CLAVE_SYNC = "alignerr-simulador-sync-code-v1";
@@ -2297,6 +2313,7 @@ $("btn-masinfo").onclick = ()=>{
   if(!q) return;
   // cada pulsación pide una explicación distinta a Gemini
   E.masInfoN = (E.masInfoN || 0) + 1;
+  $("btn-masinfo").textContent = "🔄 Otra explicación";
   explicarConGemini(q, $("q-web"), $("btn-masinfo"), E.masInfoN);
 };
 $("btn-repetir-exp").onclick = ()=>{
@@ -2336,12 +2353,13 @@ $("btn-reportes-menu").onclick = ()=>{ mostrarReportes(); };
 $("btn-rep-volver").onclick = ()=>{ mostrar("pantalla-menu"); };
 $("btn-rep-enviar").onclick = ()=>{
   if(reportes.length === 0){ leerNuevo("No hay comentarios que enviar."); return; }
-  leerNuevo("Enviando comentarios...");
+  leerNuevo("Enviando comentarios al buzón privado del asistente...");
   Promise.all(reportes.map((r,i)=>enviarReporteNtfy(r,i+1)))
     .then(()=>{
       $("rep-lista").insertAdjacentHTML("afterbegin",
-        '<p class="nota" style="color:var(--ok)">✅ Comentarios enviados al asistente.</p>');
-      leerNuevo("Comentarios enviados al asistente.");
+        '<p class="nota" style="color:var(--ok)">✅ Enviados al buzón privado del asistente. '+
+        'Ya han salido de este móvil: los leerá y te contestará por Telegram.</p>');
+      leerNuevo("Comentarios enviados al buzón privado del asistente. Los leerá y te contestará por Telegram.");
     })
     .catch(()=>{
       $("rep-lista").insertAdjacentHTML("afterbegin",
@@ -2660,6 +2678,7 @@ function mostrarPregunta(){
   $("btn-siguiente").textContent = (E.actual === total-1) ? "Ver resultados" : "Siguiente →";
 
   actualizarBotonMarcas();
+  E.masInfoN = 0;   // cada pregunta empieza con "Más explicación"
   actualizarBotonMasInfo();
   mostrarMasInfoEnQuiz(q);
 
@@ -2724,21 +2743,22 @@ function sonidoFallo(){ tocarTono([220, 174.6], 0.22, "sawtooth"); }
 
 // Aviso de "queda un segundo": un fogonazo tipo relámpago en la pantalla
 // (sube y baja la luz) más un tictac suave, para avisar de que va a cambiar.
-function avisarApuro(){
+// sinTono = true cuando ya suena otro aviso (p. ej. al fallar).
+function avisarApuro(sinTono){
   const el = $("flash-aviso");
   if(el){ el.classList.remove("on"); void el.offsetWidth; el.classList.add("on"); }
   document.body.classList.remove("fondo-aviso");
   void document.body.offsetWidth;
   document.body.classList.add("fondo-aviso");
-  tocarTono([1100, 1500], 0.06, "sine");
+  if(!sinTono) tocarTono([1100, 1500], 0.06, "sine");
 }
 
 /* Relámpago de aviso justo antes de pasar a la siguiente pantalla:
-   espera 1 s → relámpago (2 s) → 2 s más → siguiente. */
+   espera 1 s → relámpago (1 s) → 2 s más → siguiente. */
 function relampagoYAvanzar(idx, esperaAntes){
   setTimeout(()=>{
     avisarApuro();
-    setTimeout(()=>avanzarSiSigue(idx), 2000 + 2000);
+    setTimeout(()=>avanzarSiSigue(idx), 1000 + 2000);
   }, (esperaAntes == null ? 1000 : esperaAntes));
 }
 function responder(idx){
@@ -2777,7 +2797,10 @@ function responder(idx){
       aviso();
     }
   }else{
-    if(vozauto) leerNuevo($("q-feedback").textContent, escucharComando);
+    // Al fallar también sale el relámpago (sin tictac: ya suena el aviso de fallo).
+    // No avanza solo: se lee el fallo y se espera a pulsar "Siguiente".
+    if(vozauto) leerNuevo($("q-feedback").textContent, ()=>{ escucharComando(); avisarApuro(true); });
+    else avisarApuro(true);
   }
 }
 function avanzarSiSigue(idx){
@@ -2903,6 +2926,8 @@ function mostrarResultados(){
     rev.appendChild(div);
   });
   mostrar("pantalla-res");
+  // Excepción: aquí sí sale el relámpago (queda bien y avisa de que el examen ha terminado)
+  avisarApuro();
   const titulo = E.agotadoTotal ? "Tiempo agotado" : "Examen completado";
   const base = titulo+". Has acertado "+E.aciertos+" de "+total+". Porcentaje "+pct+" por ciento. "+msg;
   const nFalladas = E.respuestas.filter(r=>!r.ok).length;
