@@ -18,237 +18,264 @@
     --ok:#4ade80; --bad:#ff5c5c; --ambar:#ffb020;
     --mat:#4a9eff; --prog:#ff9f43;
     --n1:#22d3ee; --n2:#a78bfa; --n3:#f472b6;
+    --radio:.75em;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+  /* REGLA: nada de tamaños fijos. Todo escala con la pantalla (ancho). */
+  html{font-size:clamp(14px, 4.1vw, 22px);}
+  /* Si la pantalla es BAJA (móvil apaisado, ventana pequeña) todo se reduce
+     proporcionalmente para que siga cabiendo entero y no haya que hacer scroll. */
+  @media (max-height:760px){ html{font-size:clamp(13px,3.7vw,18px);} }
+  @media (max-height:620px){ html{font-size:clamp(12px,3.3vw,15px);} }
+  @media (max-height:480px){ html{font-size:clamp(11px,3vw,13px);} }
+  html,body{height:100%;margin:0;padding:0;background:var(--bg);color:var(--text);
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,"DejaVu Sans",sans-serif;
-    font-size:17px;line-height:1.45;}
+    line-height:1.42;overflow:hidden;}
   body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
-  .pantalla{display:none;min-height:100vh;}
-  .pantalla.activa{display:block;}
-  #pantalla-quiz{height:100vh;height:100dvh;overflow:hidden;}
-  #pantalla-quiz.activa{display:flex;flex-direction:column;}
-  h1{font-size:1.25rem;margin:0 0 2px;text-align:center;}
-  h2{font-size:1rem;color:var(--accent);margin:6px 0 3px;text-align:left;}
-  .sub{color:var(--sub);font-size:.82rem;text-align:center;margin:0 0 6px;}
 
-  /* ---- Estructura ---- */
-  .caja{max-width:560px;margin:0 auto;padding:8px 16px 40px;}
-  .card{background:var(--card);border-radius:16px;padding:12px 12px;margin:0 auto;max-width:560px;
-    box-shadow:0 2px 0 rgba(0,0,0,.25);}
-  .fila{display:flex;flex-wrap:wrap;gap:6px;}
-  .fila-botones{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
+  /* ---- Pantallas: SIEMPRE a pantalla completa. La página NUNCA hace scroll. ---- */
+  .pantalla{display:none;height:100%;}
+  .pantalla.activa{display:flex;flex-direction:column;}
+  #pantalla-quiz,#pantalla-res{height:100%;}
+  body.sin-scroll{overflow:hidden;}
 
-  /* ---- Rectángulos de color (materias / dificultad) ---- */
+  /* ---- Contenedor: ocupa todo el hueco disponible ---- */
+  .caja{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;
+    width:100%;max-width:min(100%,720px);margin:0 auto;
+    padding:.4em .75em .7em;gap:.45em;
+    overflow-y:auto;}                 /* el scroll, si hace falta, es INTERNO */
+  /* "relleno" = absorbe el espacio libre que sobra y se lo reparte a sus hijos */
+  .relleno{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:.4em;}
+  /* pantalla que ya no debe desplazarse ni dentro: menú y resultados */
+  .fijo{overflow:hidden;}
+
+  h1{font-size:1.15rem;margin:0 0 .1em;text-align:center;flex:0 0 auto;}
+  h2{font-size:.95rem;color:var(--accent);margin:.25em 0 .1em;text-align:left;}
+  .sub{color:var(--sub);font-size:.8rem;text-align:center;margin:0;flex:0 0 auto;}
+
+  /* ---- Tarjetas ---- */
+  .card{background:var(--card);border-radius:var(--radio);padding:.55em .65em;
+    margin:0 auto;max-width:100%;box-shadow:0 2px 0 rgba(0,0,0,.25);flex:0 0 auto;}
+  /* Rejilla: las tarjetas comparten el ANCHO y así se ahorra alto → sin scroll */
+  .rejilla{display:grid;gap:.45em;align-content:start;
+    grid-template-columns:repeat(auto-fit,minmax(min(100%,10em),1fr));}
+  .rejilla .card{margin:0;min-width:0;}
+  /* Botones de pie: SIEMPRE visibles aunque el contenido sea largo */
+  .caja > .fila-botones{position:sticky;bottom:0;z-index:3;
+    background:linear-gradient(to top,var(--bg) 70%,rgba(20,20,31,0));
+    padding-top:.4em;padding-bottom:.15em;}
+
+  /* ---- Filas: los botones se reparten el ancho a partes iguales ---- */
+  .fila{display:flex;gap:.35em;flex-wrap:nowrap;min-height:0;}
+  .fila-botones{display:flex;gap:.4em;justify-content:center;flex-wrap:wrap;flex:0 0 auto;}
+
+  /* ================= BOTONES: porcentaje del espacio libre ================= */
+  button,.rect,.primario,.secundario,.peligro,.opcion,#btn-siguiente,
+  #btn-leer,#btn-voz,#btn-desafio,#btn-reportar,#btn-saltar,#btn-tranquilo,
+  #btn-olvido,#btn-masinfo,#btn-repetir-exp,#btn-pausa{
+    font-family:inherit;
+    font-size:clamp(.9rem, 3.5vw, 1.2rem);
+    font-weight:700;
+    padding:.65em .8em;
+    border-radius:var(--radio);
+    line-height:1.25;
+    min-height:2.6em;
+    min-width:0;
+    cursor:pointer;
+    touch-action:manipulation;}
+  /* Cada botón de una fila ocupa su parte del ancho disponible */
+  .fila > button,.fila > .rect,.fila-botones > button{flex:1 1 0;}
+  .num-presets > .rect{flex:1 1 0;}
+
   .rect{border:1.5px solid var(--c);background:var(--card);color:var(--c);
-    font-weight:700;font-size:.9rem;padding:8px 12px;border-radius:11px;
-    cursor:pointer;flex:1 1 auto;min-width:104px;text-align:center;transition:background .12s,color .12s;}
+    text-align:center;transition:background .12s,color .12s;padding:.6em .4em;}
   .rect.sel{background:var(--c);color:#0d0d14;border-color:var(--c);}
   .rect:active{opacity:.85;}
 
-  /* ---- Botones normales ---- */
-  button{font-family:inherit;}
-  .primario{display:block;width:100%;margin-top:8px;background:var(--accent);color:#fff;
-    border:none;border-radius:12px;font-size:1.05rem;font-weight:700;padding:10px;cursor:pointer;}
+  .primario{display:block;width:100%;background:var(--accent);color:#fff;border:none;}
   .primario:active{background:var(--accent2);}
-  .secundario{background:var(--card2);color:var(--text);border:none;border-radius:11px;
-    font-size:.9rem;padding:9px 16px;cursor:pointer;}
+  .secundario{background:var(--card2);color:var(--text);border:none;}
   .secundario:active{background:#33334a;}
-  .peligro{background:var(--card2);color:var(--bad);border:none;border-radius:11px;
-    font-size:.9rem;padding:9px 16px;cursor:pointer;}
+  .peligro{background:var(--card2);color:var(--bad);border:none;}
+  /* Botones grandes de sección (Estadísticas / Herramientas) */
+  .secundario.grande{font-size:1.05em;}
 
   /* ---- Resumen de estadísticas en el menú principal ---- */
-  .resumen-est{padding:10px 12px;margin:0 auto 12px;}
-  .res-linea{font-size:.92rem;font-weight:700;line-height:1.5;color:var(--text);}
+  .resumen-est{padding:.5em .6em;}
+  .res-linea{font-size:.88rem;font-weight:700;line-height:1.35;color:var(--text);}
   .res-linea .vacio{color:var(--sub);font-weight:400;}
 
-  /* ---- Botones grandes de sección ---- */
-  .secundario.grande{font-size:.92rem;font-weight:700;padding:11px 12px;border-radius:12px;}
-
-  /* ---- Menú principal compacto (sin scroll) ---- */
-  .caja-menu{padding:6px 14px 14px;}
-  .caja-menu h1{font-size:1.15rem;margin:0 0 6px;}
-  .card-menu{padding:10px;}
-  .lbl{color:var(--sub);font-size:.85rem;flex:0 0 auto;align-self:center;}
-  .card-menu .rect{min-width:88px;padding:8px 8px;font-size:.86rem;}
-  .card-menu .contador{font-size:.68rem;line-height:1.3;margin-top:5px;color:var(--sub);}
-  .card-menu .num-presets{margin-top:6px;}
-  .card-menu .primario{margin-top:8px;}
-  .card-menu #contador-disp{margin:4px 0 0;font-size:.76rem;}
+  /* ---- Menú principal: reparte TODO el alto de la pantalla ---- */
+  .caja-menu{overflow:hidden;gap:.35em;}
+  .caja-menu h1{font-size:1.1rem;margin:0;}
+  .caja-menu .card-menu{flex:3 1 0;min-height:0;display:flex;flex-direction:column;gap:.35em;
+    overflow:hidden;}
+  .caja-menu .fila-botones{flex:1 1 0;min-height:0;}
+  .caja-menu .fila-botones > button{font-size:1.05em;}
+  /* Menú de Herramientas: los botones se reparten TODO el alto disponible */
+  .lista-menu > button{flex:1 1 auto;min-height:2.6em;font-size:1.15em;font-weight:700;}
+  .lista-menu > button:active{opacity:.8;}
+  .lbl{color:var(--sub);font-size:.82rem;flex:0 0 auto;align-self:center;}
+  .card-menu .contador{font-size:.68rem;line-height:1.25;margin-top:.25em;color:var(--sub);}
+  .card-menu #contador-disp{margin:.15em 0 0;font-size:.72rem;flex:0 0 auto;}
+  /* Cada fila del menú se reparte EL ALTO QUE SOBRE en partes iguales
+     (porcentaje del espacio libre). "Comenzar" es la acción principal y
+     se queda con más. */
+  .caja-menu .card-menu > .fila,
+  .caja-menu .card-menu > .num-presets,
+  .caja-menu .card-menu > .num-fila{flex:1 1 auto;min-height:0;}
+  .caja-menu .card-menu > .primario{flex:1.4 1 auto;min-height:0;}
+  .caja-menu .card-menu > .nota{flex:0 0 auto;}
 
   /* ---- Número de preguntas ---- */
-  .num-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;}
-  .num-presets .rect{flex:1 1 auto;min-width:52px;padding:8px 10px;font-size:.9rem;}
-  .num-fila{display:flex;align-items:center;gap:12px;}
+  .num-presets{display:flex;gap:.3em;margin-bottom:.25em;min-height:0;flex:1 1 auto;}
+  .num-fila{display:flex;align-items:center;gap:.5em;min-height:0;flex:1 1 auto;}
   input[type=number]{flex:1;background:var(--card2);color:var(--text);
-    border:1.5px solid var(--accent);border-radius:11px;padding:8px 10px;
+    border:1.5px solid var(--accent);border-radius:var(--radio);padding:.5em .6em;
     font-size:1.05rem;font-weight:700;text-align:center;min-width:0;}
-  input[type=number]::placeholder{color:#9a9ab0;font-style:italic;font-size:.85rem;font-weight:400;opacity:.85;}
+  input[type=number]::placeholder{color:#9a9ab0;font-style:italic;font-size:.8rem;font-weight:400;opacity:.85;}
   input[type=text],input[type=password]{flex:1;background:var(--card2);color:var(--text);
-    border:1.5px solid var(--accent);border-radius:11px;padding:8px 10px;
+    border:1.5px solid var(--accent);border-radius:var(--radio);padding:.5em .6em;
     font-size:.95rem;min-width:0;}
-  input[type=text]::placeholder,input[type=password]::placeholder{color:#9a9ab0;font-style:italic;font-size:.85rem;opacity:.85;}
+  input[type=text]::placeholder,input[type=password]::placeholder{color:#9a9ab0;font-style:italic;font-size:.8rem;opacity:.85;}
   #q-web.globo-ia,.web-res.globo-ia{background:#141414;color:#f2f2f2;border:1px solid #3a3a3a;
-    border-radius:14px;padding:12px 14px;margin-top:8px;}
-  .num-val{font-weight:700;font-size:.9rem;color:var(--sub);white-space:nowrap;}
+    border-radius:var(--radio);padding:.6em .7em;margin-top:.4em;}
+  .num-val{font-weight:700;font-size:.85rem;color:var(--sub);white-space:nowrap;}
 
   /* ---- Select temporizador ---- */
   select{width:100%;background:var(--card2);color:var(--text);border:1.5px solid var(--accent);
-    border-radius:11px;padding:10px;font-size:1rem;font-weight:600;cursor:pointer;}
-  .nota{color:var(--sub);font-size:.78rem;text-align:center;margin:10px 0 0;}
-  .contador{font-size:.78rem;color:var(--sub);background:rgba(255,255,255,.04);
-    border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:5px 10px;
-    margin-top:6px;line-height:1.4;}
+    border-radius:var(--radio);padding:.55em;font-size:1rem;font-weight:600;cursor:pointer;}
+  .contador{font-size:.75rem;color:var(--sub);background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);border-radius:var(--radio);padding:.3em .6em;
+    margin-top:.25em;line-height:1.35;}
   .contador b{color:var(--text);}
   .aviso{color:#f87171 !important;font-weight:600;}
 
   /* ---- Examen ---- */
-  .cabecera{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;
-    background:var(--card);padding:8px 12px;position:sticky;top:0;z-index:5;}
-  #q-progreso{font-weight:700;font-size:1rem;}
+  .cabecera{display:flex;align-items:center;flex-wrap:wrap;gap:.2em .5em;flex:0 0 auto;
+    background:var(--card);padding:.35em .6em;position:sticky;top:0;z-index:5;}
+  #q-progreso{font-weight:700;font-size:.95rem;}
   #q-puntos{font-weight:700;color:var(--ok);margin-left:auto;}
-  #q-timer{font-weight:700;font-size:.95rem;}
-  .badge{font-size:.72rem;font-weight:700;padding:2px 7px;border-radius:6px;color:#0d0d14;}
-  .cuerpo{flex:1;overflow-y:auto;width:100%;max-width:620px;margin:0 auto;padding:12px 16px 14px;}
-  #q-pregunta{font-size:1.08rem;font-weight:700;margin:0 0 10px;}
+  #q-timer{font-weight:700;font-size:.9rem;}
+  .badge{font-size:.7rem;font-weight:700;padding:.1em .35em;border-radius:.4em;color:#0d0d14;}
+  .cuerpo{flex:1;overflow-y:auto;width:100%;max-width:720px;margin:0 auto;padding:.5em .75em .6em;
+    display:flex;flex-direction:column;gap:.35em;min-height:0;}
+  #q-pregunta{font-size:1.05rem;font-weight:700;margin:0;}
   .opcion{display:block;width:100%;text-align:left;background:var(--card);color:var(--text);
-    border:1.5px solid var(--b,#4a4a66);border-radius:12px;padding:10px 12px;
-    font-size:.95rem;margin-bottom:8px;cursor:pointer;line-height:1.4;}
+    border:1.5px solid var(--b,#4a4a66);margin:0;}
   .opcion:active{background:var(--card2);}
-  .opcion.ok{background:var(--ok);border-color:var(--ok);color:#0d0d14;font-weight:700;}
-  .opcion.bad{background:var(--bad);border-color:var(--bad);color:#fff;font-weight:700;}
+  .opcion.ok{background:var(--ok);border-color:var(--ok);color:#0d0d14;}
+  .opcion.bad{background:var(--bad);border-color:var(--bad);color:#fff;}
   .opcion:disabled{cursor:default;}
-  #q-feedback{font-size:1.05rem;font-weight:600;margin:8px 0 0;white-space:pre-wrap;
-    min-height:1.6em;}
-  #btn-siguiente{display:block;margin-left:auto;margin-top:10px;background:var(--accent);
-    color:#fff;border:none;border-radius:11px;font-size:1rem;font-weight:700;
-    padding:10px 18px;cursor:pointer;position:sticky;bottom:0;
+  #q-feedback{font-size:1rem;font-weight:600;margin:0;white-space:pre-wrap;min-height:1.2em;}
+  #btn-siguiente{display:block;margin-left:auto;margin-top:0;background:var(--accent);
+    color:#fff;border:none;font-size:1rem;position:sticky;bottom:0;flex:0 0 auto;
     box-shadow:0 -4px 12px rgba(0,0,0,.35);}
   #btn-siguiente:disabled{opacity:.35;cursor:default;}
 
   /* ---- Resultados / estadísticas ---- */
   #r-titulo,#s-titulo{text-align:center;}
-  #r-nota{text-align:center;font-size:1.6rem;font-weight:800;margin:4px 0 0;}
-  #r-mensaje{text-align:center;color:var(--sub);margin:0 0 8px;font-size:.9rem;}
-  .detalle{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:8px;
-    font-size:.8rem;}
-  .chip{padding:2px 8px;border-radius:7px;background:var(--card);font-weight:600;}
-  .repaso{max-width:620px;margin:0 auto;background:var(--card);border-radius:12px;
-    padding:10px;font-size:.8rem;}
-  .repaso .item{padding:6px 0;border-bottom:1px solid #2c2c40;}
+  #r-nota{text-align:center;font-size:1.6rem;font-weight:800;margin:.1em 0 0;}
+  #r-mensaje{text-align:center;color:var(--sub);margin:0 0 .3em;font-size:.88rem;}
+  .detalle{display:flex;flex-wrap:wrap;gap:.25em;justify-content:center;margin-bottom:.3em;
+    font-size:.78rem;flex:0 0 auto;}
+  .chip{padding:.12em .45em;border-radius:.4em;background:var(--card);font-weight:600;}
+  .repaso{max-width:100%;margin:0 auto;background:var(--card);border-radius:var(--radio);
+    padding:.5em;font-size:.78rem;}
+  .repaso .item{padding:.3em 0;border-bottom:1px solid #2c2c40;}
   .repaso .item:last-child{border-bottom:none;}
-  .repaso .meta{color:var(--sub);font-size:.74rem;}
+  .repaso .meta{color:var(--sub);font-size:.72rem;}
   .ok-txt{color:var(--ok);} .bad-txt{color:var(--bad);}
   /* Resultados: todo en una sola vista, sin scroll de página */
-  #pantalla-res{position:fixed;inset:0;height:100vh;height:100dvh;overflow:hidden;}
-  #pantalla-res.activa{display:flex;flex-direction:column;}
-  #pantalla-res .caja{display:flex;flex-direction:column;flex:1;min-height:0;padding-bottom:8px;overflow:hidden;}
+  #pantalla-res .caja{display:flex;flex-direction:column;flex:1;min-height:0;padding-bottom:.4em;overflow:hidden;}
   #pantalla-res .repaso{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;}
   #pantalla-res .fila-botones{flex:0 0 auto;}
-  /* Pantallas que no deben desplazarse nunca (examen y resultados) */
-  body.sin-scroll{overflow:hidden;}
-  .centrado{max-width:560px;margin:0 auto;}
-  #s-resumen{text-align:center;font-weight:700;font-size:.95rem;margin-bottom:4px;}
-  #s-mejor{text-align:center;color:var(--ok);font-size:.9rem;margin-bottom:12px;}
-  .stats-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:6px;
-    font-size:.85rem;font-weight:600;}
-  .banco{text-align:center;font-size:.8rem;color:var(--sub);margin:10px 0 6px;}
-  .ultimo{padding:9px 0;border-bottom:1px solid #2c2c40;}
+  .centrado{max-width:720px;margin:0 auto;}
+  #s-resumen{text-align:center;font-weight:700;font-size:.92rem;margin-bottom:.15em;}
+  #s-mejor{text-align:center;color:var(--ok);font-size:.88rem;margin-bottom:.4em;}
+  .stats-chips{display:flex;flex-wrap:wrap;gap:.3em;justify-content:center;margin-bottom:.25em;
+    font-size:.82rem;font-weight:600;}
+  .banco{text-align:center;font-size:.78rem;color:var(--sub);margin:.4em 0 .25em;}
+  .ultimo{padding:.4em 0;border-bottom:1px solid #2c2c40;}
   .ultimo:last-child{border-bottom:none;}
-  .ultimo .cab{font-weight:700;color:var(--accent);font-size:.85rem;}
-  .ultimo .res{font-size:.85rem;font-weight:700;}
-  .ultimo .desg{color:var(--sub);font-size:.76rem;}
-  .vacio{color:var(--sub);font-size:.85rem;}
+  .ultimo .cab{font-weight:700;color:var(--accent);font-size:.82rem;}
+  .ultimo .res{font-size:.82rem;font-weight:700;}
+  .ultimo .desg{color:var(--sub);font-size:.74rem;}
+  .vacio{color:var(--sub);font-size:.82rem;}
 
   /* ---- Marcas (Desafío / Olvido) ---- */
-  .fila-marcas{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px;}
+  .fila-marcas{display:flex;gap:.3em;flex-wrap:wrap;margin:0;}
+  .fila-marcas > button{flex:1 1 0;}
   #btn-desafio{background:var(--card2);color:var(--ambar);
-    border:1.5px solid var(--ambar);border-radius:11px;font-size:.85rem;font-weight:700;
-    padding:7px 10px;cursor:pointer;}
+    border:1.5px solid var(--ambar);}
   #btn-desafio.en-desafio{color:var(--ok);border-color:var(--ok);}
   #btn-olvido{background:rgba(167,139,250,.16);color:#a78bfa;
-    border:1.5px solid #a78bfa;border-radius:11px;font-size:.85rem;font-weight:700;
-    padding:7px 10px;cursor:pointer;margin:8px 0 0;}
+    border:1.5px solid #a78bfa;margin:0;}
   #btn-olvido.en-olvido{color:var(--bad);border-color:var(--bad);background:rgba(248,113,113,.14);}
-  #btn-leer{background:var(--card2);color:#4a9eff;
-    border:1.5px solid #4a9eff;border-radius:11px;font-size:.85rem;font-weight:700;
-    padding:7px 10px;cursor:pointer;}
-  #btn-masinfo{background:var(--card2);color:#34d399;
-    border:1.5px solid #34d399;border-radius:11px;font-size:.85rem;font-weight:700;
-    padding:7px 10px;cursor:pointer;margin:8px 0 0;}
+  #btn-leer{background:var(--card2);color:#4a9eff;border:1.5px solid #4a9eff;}
+  #btn-masinfo{background:var(--card2);color:#34d399;border:1.5px solid #34d399;margin:0;}
   #btn-masinfo.en-masinfo{color:var(--ok);border-color:var(--ok);}
-  #btn-repetir-exp{background:var(--card2);color:#60a5fa;
-    border:1.5px solid #60a5fa;border-radius:11px;font-size:.85rem;font-weight:700;
-    padding:7px 10px;cursor:pointer;margin:8px 0 0;}
-  #btn-saltar{background:var(--card2);color:var(--ambar);
-    border:1.5px solid var(--ambar);border-radius:11px;font-size:.85rem;font-weight:700;
-    padding:7px 10px;cursor:pointer;}
-  #btn-tranquilo{background:var(--card2);color:#38bdf8;
-    border:1.5px solid #38bdf8;border-radius:11px;font-size:.85rem;font-weight:700;
-    padding:7px 10px;cursor:pointer;}
-  #btn-voz{background:var(--card2);color:#f472b6;
-    border:1.5px solid #f472b6;border-radius:11px;font-size:.85rem;font-weight:700;
-    padding:7px 10px;cursor:pointer;}
+  #btn-repetir-exp{background:var(--card2);color:#60a5fa;border:1.5px solid #60a5fa;margin:0;}
+  #btn-saltar{background:var(--card2);color:var(--ambar);border:1.5px solid var(--ambar);}
+  #btn-tranquilo{background:var(--card2);color:#38bdf8;border:1.5px solid #38bdf8;}
+  #btn-voz{background:var(--card2);color:#f472b6;border:1.5px solid #f472b6;}
   #btn-voz.escuchando{background:#f472b6;color:#0d0d14;animation:vozPulso 1s ease-in-out infinite;}
   @keyframes vozPulso{0%,100%{opacity:1}50%{opacity:.55}}
-  /* Pausa: junto a la respuesta, más grande y con más margen */
-  #btn-pausa.btn-pausa-respuesta{display:block;width:100%;box-sizing:border-box;
-    background:var(--card2);color:#fbbf24;border:2px solid #fbbf24;
-    border-radius:12px;font-size:1rem;font-weight:700;padding:12px 14px;
-    cursor:pointer;margin:14px 0 0;letter-spacing:.2px;}
-  #q-mas{font-size:.95rem;margin:8px 0 0;white-space:pre-wrap;color:#34d399;
-    background:rgba(52,211,153,.08);border-radius:9px;padding:8px 10px;}
-  #q-web,.web-res{font-size:.9rem;margin:8px 0 0;white-space:pre-wrap;color:#4a9eff;
-    background:rgba(74,158,255,.08);border-radius:9px;padding:8px 10px;}
+  /* Pausa: junto a la respuesta, ocupa todo el ancho */
+  #btn-pausa.btn-pausa-respuesta{display:block;width:100%;background:var(--card2);color:#fbbf24;
+    border:2px solid #fbbf24;margin:0;letter-spacing:.2px;}
+  #q-mas{font-size:.9rem;margin:0;white-space:pre-wrap;color:#34d399;
+    background:rgba(52,211,153,.08);border-radius:var(--radio);padding:.4em .55em;}
+  #q-web,.web-res{font-size:.88rem;margin:0;white-space:pre-wrap;color:#4a9eff;
+    background:rgba(74,158,255,.08);border-radius:var(--radio);padding:.4em .55em;}
   .exp.ext{color:#34d399;border:1px solid rgba(52,211,153,.4);}
-  .d-resumen{text-align:center;font-weight:700;font-size:.95rem;margin-bottom:14px;}
-  .d-item{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px;
-    max-width:620px;margin-left:auto;margin-right:auto;}
-  .d-item .q{font-weight:700;font-size:.95rem;margin:0 0 6px;}
-  .d-item .meta{color:var(--sub);font-size:.78rem;margin-bottom:6px;}
-  .d-item .exp{font-size:.85rem;background:rgba(255,255,255,.04);border-radius:9px;
-    padding:8px 10px;margin:6px 0;}
-  .d-item .nota{font-size:.82rem;color:var(--ambar);font-style:italic;margin:6px 0;}
+  .d-resumen{text-align:center;font-weight:700;font-size:.92rem;margin-bottom:.5em;}
+  .d-item{background:var(--card);border-radius:var(--radio);padding:.7em;margin-bottom:.5em;
+    max-width:100%;margin-left:auto;margin-right:auto;}
+  .d-item .q{font-weight:700;font-size:.92rem;margin:0 0 .25em;}
+  .d-item .meta{color:var(--sub);font-size:.76rem;margin-bottom:.25em;}
+  .d-item .exp{font-size:.82rem;background:rgba(255,255,255,.04);border-radius:var(--radio);
+    padding:.4em .55em;margin:.3em 0;}
+  .d-item .nota{font-size:.8rem;color:var(--ambar);font-style:italic;margin:.3em 0;}
   .d-item.d-item-desafio{border:2px solid #1e3a5f;background:#1e3a5f;}
-  .d-item.d-item-desafio .q{font-size:1.08rem;color:#a5c8ff;}
+  .d-item.d-item-desafio .q{font-size:1.05rem;color:#a5c8ff;}
   .d-item.d-item-olvido{border:2px solid #7f1d1d;background:#7f1d1d;}
-  .d-item.d-item-olvido .q{font-size:1.08rem;color:#fca5a5;}
-  .d-fila{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;}
+  .d-item.d-item-olvido .q{font-size:1.05rem;color:#fca5a5;}
+  .d-fila{display:flex;gap:.35em;justify-content:flex-end;flex-wrap:wrap;}
+  .d-fila > button{flex:1 1 0;}
 
   /* ---- Temario ---- */
-  .t-total{text-align:center;color:var(--sub);font-size:.8rem;margin-bottom:12px;}
-  .tema{background:var(--card);border-radius:12px;padding:10px 12px;margin-bottom:10px;
-    max-width:620px;margin-left:auto;margin-right:auto;}
-  .tema summary{cursor:pointer;font-weight:700;font-size:.9rem;color:var(--accent);}
-  .tema .t-niv{color:var(--sub);font-weight:600;font-size:.76rem;display:block;margin-top:2px;}
-  .tema-lista{margin:10px 0 2px;padding-left:18px;font-size:.83rem;color:var(--text);}
-  .tema-lista li{margin-bottom:6px;}
-  .tema-lista li.t-li-mat{background:#14532d;border-radius:8px;padding:6px 10px;color:#86efac;font-weight:600;}
-  .tema-lista li.t-li-prog{background:#4a1d2e;border-radius:8px;padding:6px 10px;color:#f0b6d0;font-weight:600;}
+  .t-total{text-align:center;color:var(--sub);font-size:.78rem;margin-bottom:.4em;}
+  .tema{background:var(--card);border-radius:var(--radio);padding:.5em .6em;margin-bottom:.4em;
+    max-width:100%;margin-left:auto;margin-right:auto;}
+  .tema summary{cursor:pointer;font-weight:700;font-size:.88rem;color:var(--accent);}
+  .tema .t-niv{color:var(--sub);font-weight:600;font-size:.74rem;display:block;margin-top:.1em;}
+  .tema-lista{margin:.4em 0 .1em;padding-left:1.1em;font-size:.8rem;color:var(--text);}
+  .tema-lista li{margin-bottom:.3em;}
+  .tema-lista li.t-li-mat{background:#14532d;border-radius:.4em;padding:.3em .55em;color:#86efac;font-weight:600;}
+  .tema-lista li.t-li-prog{background:#4a1d2e;border-radius:.4em;padding:.3em .55em;color:#f0b6d0;font-weight:600;}
 
   /* ---- Morado sobre fondo oscuro: fondo más claro detrás (opción B) ---- */
   #n-2:not(.sel){background:rgba(167,139,250,.16);}
   .num-presets .rect:not(.sel){background:rgba(124,108,240,.16);}
-  .tema summary{background:rgba(124,108,240,.16);border-radius:8px;padding:6px 8px;display:block;}
-  .ultimo .cab{background:rgba(124,108,240,.16);border-radius:8px;padding:6px 8px;display:block;}
+  .tema summary{background:rgba(124,108,240,.16);border-radius:.4em;padding:.3em .45em;display:block;}
+  .ultimo .cab{background:rgba(124,108,240,.16);border-radius:.4em;padding:.3em .45em;display:block;}
 
   #js-check{position:fixed;top:0;left:0;right:0;z-index:9999;background:#7f1d1d;color:#fff;
-    padding:14px 16px;font-size:.9rem;text-align:center;}
+    padding:.7em .9em;font-size:.88rem;text-align:center;}
   #err-overlay{display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;
-    background:#7f1d1d;color:#fff;padding:10px 14px;font-size:.8rem;text-align:center;}
+    background:#7f1d1d;color:#fff;padding:.5em .8em;font-size:.78rem;text-align:center;}
   #flash-aviso{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9997;}
-  #flash-aviso{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9997;}
-  #flash-aviso.on{animation:relampago 1s ease-out;}
+  #flash-aviso.on{animation:relampago .5s ease-out;}
   @keyframes relampago{
     0%{opacity:0;} 4%{opacity:.6;} 8%{opacity:.05;}
     50%{opacity:.5;} 62%{opacity:.06;} 82%{opacity:.3;} 100%{opacity:0;}
   }
-  body.fondo-aviso{animation:fondoAviso 1s ease-out;}
+  body.fondo-aviso{animation:fondoAviso .5s ease-out;}
   @keyframes fondoAviso{
     0%{filter:brightness(1);} 5%{filter:brightness(2.2);} 10%{filter:brightness(1.1);}
     55%{filter:brightness(1.8);} 100%{filter:brightness(1);}
   }
-  button,.rect,.opcion,.primario,.secundario{touch-action:manipulation;}
 </style>
 </head>
 <body>
@@ -258,7 +285,7 @@
 
 <!-- ============================ MENÚ ============================ -->
 <section id="pantalla-menu" class="pantalla activa">
-  <div class="caja caja-menu">
+  <div class="caja caja-menu fijo">
     <h1>Simulador Examen Alignerr</h1>
 
     <!-- Resumen de estadísticas (visible en el menú, sin scroll) -->
@@ -267,13 +294,13 @@
       <div class="res-linea" id="res-prog"></div>
     </div>
 
-    <div class="card card-menu">
+    <div class="card card-menu relleno">
       <div class="fila">
         <button class="rect" id="m-mat" style="--c:#4a9eff">Matemáticas</button>
         <button class="rect" id="m-prog" style="--c:#ff9f43">Programación</button>
       </div>
 
-      <div class="fila" style="margin-top:6px">
+      <div class="fila">
         <button class="rect" id="n-1" style="--c:#22d3ee">Medio</button>
         <button class="rect" id="n-2" style="--c:#a78bfa">Difícil</button>
         <button class="rect" id="n-3" style="--c:#f472b6">Muy difícil</button>
@@ -321,20 +348,36 @@
   </div>
 </section>
 
-<!-- ========================== HERRAMIENTAS ========================== -->
+<!-- ========================== HERRAMIENTAS (menú) ========================== -->
 <section id="pantalla-herr" class="pantalla">
-  <div class="caja">
+  <div class="caja caja-menu fijo">
     <h1>🧰 Herramientas</h1>
+    <div class="relleno lista-menu">
+      <button class="rect" id="h-voz"    data-herr="pantalla-herr-voz"    style="--c:#34d399">🔊 Voz</button>
+      <button class="rect" id="h-sync"   data-herr="pantalla-herr-sync"   style="--c:#38bdf8">☁️ Sincronizar</button>
+      <button class="rect" id="h-copias" data-herr="pantalla-herr-copias" style="--c:#4a9eff">📥 Copias de seguridad</button>
+      <button class="rect" id="h-gemini" data-herr="pantalla-herr-gemini" style="--c:#f59e0b">🔑 Clave de Gemini</button>
+      <button class="rect" id="h-estudio"data-herr="pantalla-herr-estudio"style="--c:#a78bfa">📚 Estudio</button>
+      <button class="rect" id="h-otros"  data-herr="pantalla-herr-otros"  style="--c:#f472b6">⚙️ Otros</button>
+    </div>
+    <div class="fila-botones">
+      <button class="secundario" id="btn-volver-herr">← Volver al menú</button>
+    </div>
+  </div>
+</section>
 
-    <div class="card">
-      <h2 style="margin-top:0">Voz</h2>
+<!-- ===================== HERRAMIENTAS · VOZ ===================== -->
+<section id="pantalla-herr-voz" class="pantalla">
+  <div class="caja">
+    <h1>🔊 Voz</h1>
+    <div class="card relleno">
       <div class="fila">
         <button class="rect" id="btn-autoleer" style="--c:#34d399">🔊 Leer pregunta automática: SÍ</button>
       </div>
-      <div class="fila" style="margin-top:6px">
+      <div class="fila">
         <button class="rect" id="btn-vozauto" style="--c:#f472b6">🎤 Responder por voz automático: SÍ</button>
       </div>
-      <div class="fila" style="margin-top:6px">
+      <div class="fila">
         <label for="sel-vel" style="flex:0 0 auto;color:var(--sub);font-size:.85rem;align-self:center">🐢 Velocidad:</label>
         <select id="sel-vel" style="flex:1">
           <option value="0.8">Lenta</option>
@@ -343,21 +386,37 @@
         </select>
       </div>
     </div>
+    <div class="fila-botones">
+      <button class="secundario volver-herr">← Volver a Herramientas</button>
+    </div>
+  </div>
+</section>
 
-    <div class="card" style="margin-top:14px">
-      <h2 style="margin-top:0">Sincronizar</h2>
+<!-- ===================== HERRAMIENTAS · SINCRONIZAR ===================== -->
+<section id="pantalla-herr-sync" class="pantalla">
+  <div class="caja">
+    <h1>☁️ Sincronizar</h1>
+    <div class="card relleno">
       <p class="nota">Sirve para <b>recuperar tus estadísticas, desafíos y olvidos</b> si usas la app en más de un dispositivo (o si cambias de móvil). Escribe la misma palabra en los dos sitios y pulsa Sincronizar: se juntan los datos de los dos.</p>
       <div class="fila">
         <label for="inp-sync" style="flex:0 0 auto;color:var(--sub);font-size:.85rem;align-self:center">☁️ Código:</label>
         <input type="text" id="inp-sync" placeholder="Palabra para sincronizar (la misma en los dos sitios)" autocomplete="off">
       </div>
-      <div class="fila" style="margin-top:6px">
+      <div class="fila">
         <button class="rect" id="btn-sync" style="--c:#38bdf8">☁️ Sincronizar</button>
       </div>
     </div>
+    <div class="fila-botones">
+      <button class="secundario volver-herr">← Volver a Herramientas</button>
+    </div>
+  </div>
+</section>
 
-    <div class="card" style="margin-top:14px">
-      <h2 style="margin-top:0">Copias de seguridad</h2>
+<!-- ===================== HERRAMIENTAS · COPIAS ===================== -->
+<section id="pantalla-herr-copias" class="pantalla">
+  <div class="caja">
+    <h1>📥 Copias de seguridad</h1>
+    <div class="card relleno">
       <div class="fila-botones">
         <button class="secundario" id="btn-exportar">📤 Exportar estadísticas</button>
         <button class="secundario" id="btn-importar">📥 Importar estadísticas</button>
@@ -365,46 +424,66 @@
       <input type="file" id="file-importar" accept=".json,application/json" style="display:none">
       <div id="s-export-msg" style="margin-top:8px"></div>
     </div>
+    <div class="fila-botones">
+      <button class="secundario volver-herr">← Volver a Herramientas</button>
+    </div>
+  </div>
+</section>
 
-    <div class="card" style="margin-top:14px">
-      <h2 style="margin-top:0">Gemini</h2>
+<!-- ===================== HERRAMIENTAS · GEMINI ===================== -->
+<section id="pantalla-herr-gemini" class="pantalla">
+  <div class="caja">
+    <h1>🔑 Clave de Gemini</h1>
+    <div class="card relleno">
       <div class="fila">
         <input type="password" id="inp-gemini" placeholder="Pega aquí tu clave de Gemini (opcional)" autocomplete="off">
       </div>
-      <div class="fila" style="margin-top:6px">
+      <div class="fila">
         <button class="rect" id="btn-guardar-gemini" style="--c:#f59e0b">💾 Guardar clave de Gemini</button>
       </div>
     </div>
+    <div class="fila-botones">
+      <button class="secundario volver-herr">← Volver a Herramientas</button>
+    </div>
+  </div>
+</section>
 
-    <div class="card" style="margin-top:14px">
+<!-- ===================== HERRAMIENTAS · ESTUDIO ===================== -->
+<section id="pantalla-herr-estudio" class="pantalla">
+  <div class="caja">
+    <h1>📚 Estudio</h1>
+    <div class="card relleno">
       <h2 style="margin-top:0">Banco de preguntas</h2>
       <div class="contador" id="contador-cat"></div>
-    </div>
-
-    <div class="card" style="margin-top:14px">
-      <h2 style="margin-top:0">Estudio</h2>
       <div class="fila-botones">
         <button class="secundario" id="btn-desafios">⚔️ Desafíos</button>
         <button class="secundario" id="btn-olvidos">🧠 Olvido</button>
         <button class="secundario" id="btn-temario">📚 Temario</button>
       </div>
     </div>
+    <div class="fila-botones">
+      <button class="secundario volver-herr">← Volver a Herramientas</button>
+    </div>
+  </div>
+</section>
 
-    <div class="card" style="margin-top:14px">
-      <h2 style="margin-top:0">Otros</h2>
+<!-- ===================== HERRAMIENTAS · OTROS ===================== -->
+<section id="pantalla-herr-otros" class="pantalla">
+  <div class="caja">
+    <h1>⚙️ Otros</h1>
+    <div class="card relleno">
       <div class="fila-botones">
         <button class="secundario" id="btn-instalar" style="font-size:.8rem;padding:7px 12px">📲 Instalar app</button>
         <button class="secundario" id="btn-comentar-menu">💬 Comentar / proponer</button>
         <button class="secundario" id="btn-reportes-menu">📋 Comentarios (0)</button>
       </div>
-      <div class="fila-botones" style="margin-top:8px">
+      <div class="fila-botones">
         <button class="peligro" id="btn-limpio">🧹 Modo limpio (borra estadísticas y marcas)</button>
       </div>
       <p class="nota" id="instalar-msg" style="display:none;color:#fbbf24;font-weight:bold"></p>
     </div>
-
     <div class="fila-botones">
-      <button class="secundario" id="btn-volver-herr">← Volver al menú</button>
+      <button class="secundario volver-herr">← Volver a Herramientas</button>
     </div>
   </div>
 </section>
@@ -521,7 +600,7 @@
       <div id="d-lista"></div>
     </div>
     <div class="fila-botones">
-      <button class="secundario" id="btn-volver3">← Volver al menú</button>
+      <button class="secundario" id="btn-volver3">← Volver a Estudio</button>
     </div>
   </div>
 </section>
@@ -536,7 +615,7 @@
       <div id="o-lista"></div>
     </div>
     <div class="fila-botones">
-      <button class="secundario" id="btn-volver5">← Volver al menú</button>
+      <button class="secundario" id="btn-volver5">← Volver a Estudio</button>
     </div>
   </div>
 </section>
@@ -565,12 +644,12 @@
       <h2 style="margin-top:0">🔵 Matemáticas</h2>
       <div id="t-mat"></div>
     </div>
-    <div class="card" style="margin-top:14px">
+    <div class="card">
       <h2 style="margin-top:0">🟠 Programación</h2>
       <div id="t-prog"></div>
     </div>
     <div class="fila-botones">
-      <button class="secundario" id="btn-volver4">← Volver al menú</button>
+      <button class="secundario" id="btn-volver4">← Volver a Estudio</button>
     </div>
   </div>
 </section>
@@ -589,7 +668,7 @@
       <div class="stats-chips" id="s-desafio"></div>
       <div class="stats-chips" id="s-olvido"></div>
     </div>
-    <div class="card" style="margin-top:14px">
+    <div class="card">
       <h2 style="margin-top:0">Últimos exámenes</h2>
       <div id="s-ultimos"></div>
     </div>
@@ -609,7 +688,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.31";
+const VERSION = "2.32";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -921,51 +1000,70 @@ function aplicarVoz(u){
   const v = vozElegida();
   if(v) u.voice = v;
 }
+/* --- Pausa de la lectura: se guarda el punto y se sigue desde ahí --- */
+let vozPausada = false, vozTexto = "", vozPos = 0, vozAlTerminar = null, vozEnCurso = false;
+
 function actualizarPausa(){
   const b = $("btn-pausa");
   if(!b) return;
   if(!("speechSynthesis" in window)){ b.style.display = "none"; return; }
-  if(speechSynthesis.paused){ b.style.display = ""; b.textContent = "▶ Reanudar lectura"; }
-  else if(speechSynthesis.speaking){ b.style.display = ""; b.textContent = "⏸ Pausar lectura de la respuesta"; }
+  if(vozPausada){ b.style.display = ""; b.textContent = "▶ Reanudar lectura"; }
+  else if(vozEnCurso){ b.style.display = ""; b.textContent = "⏸ Pausar lectura de la respuesta"; }
   else b.style.display = "none";
+}
+function hablar(texto, alTerminar, btn){
+  const token = ++vozToken;
+  try{ speechSynthesis.cancel(); }catch(e){}
+  vozPausada = false;
+  vozTexto = texto;
+  vozPos = 0;
+  vozAlTerminar = alTerminar || null;
+  vozEnCurso = true;
+  const u = new SpeechSynthesisUtterance(texto);
+  u.lang = "es-ES"; u.rate = velocidadVoz();
+  aplicarVoz(u);
+  u.onstart = ()=>{ if(btn) btn.textContent = "🔇 Parar"; actualizarPausa(); pedirWakeLock(); };
+  u.onboundary = (e)=>{ if(e && typeof e.charIndex === "number") vozPos = e.charIndex; };
+  u.onend = u.onerror = ()=>{
+    if(token !== vozToken) return;   // ya hay otra lectura en marcha
+    if(vozPausada) return;           // está en pausa: no ha terminado
+    vozEnCurso = false;
+    if(btn) btn.textContent = "🔊 Leer";
+    actualizarPausa();
+    soltarWakeLock();
+    if(alTerminar) alTerminar();
+  };
+  speechSynthesis.speak(u);
 }
 function leer(texto, btn, alTerminar){
   if(!("speechSynthesis" in window)) return;
-  if(speechSynthesis.speaking){
+  if(speechSynthesis.speaking || speechSynthesis.pending){
     vozToken++;
     speechSynthesis.cancel();
+    vozEnCurso = false; vozPausada = false;
     if(btn) btn.textContent = "🔊 Leer";
     actualizarPausa();
     soltarWakeLock();
     return;
   }
-  const token = ++vozToken;
-  const u = new SpeechSynthesisUtterance(texto);
-  u.lang = "es-ES"; u.rate = velocidadVoz();
-  aplicarVoz(u);
-  u.onstart = ()=>{ if(btn) btn.textContent = "🔇 Parar"; actualizarPausa(); pedirWakeLock(); };
-  u.onend = u.onerror = ()=>{
-    if(btn) btn.textContent = "🔊 Leer";
-    actualizarPausa();
-    soltarWakeLock();
-    if(alTerminar && token === vozToken) alTerminar();
-  };
-  speechSynthesis.speak(u);
+  hablar(texto, alTerminar, btn);
 }
 function leerNuevo(texto, alTerminar){
   if(!("speechSynthesis" in window)) return;
-  speechSynthesis.cancel();
-  const token = ++vozToken;
-  const u = new SpeechSynthesisUtterance(texto);
-  u.lang = "es-ES"; u.rate = velocidadVoz();
-  aplicarVoz(u);
-  u.onstart = ()=>{ actualizarPausa(); pedirWakeLock(); };
-  u.onend = u.onerror = ()=>{
-    actualizarPausa();
-    soltarWakeLock();
-    if(alTerminar && token === vozToken) alTerminar();
-  };
-  speechSynthesis.speak(u);
+  hablar(texto, alTerminar);
+}
+function pausarVoz(){
+  if(!vozEnCurso) return;
+  vozPausada = true;
+  try{ speechSynthesis.cancel(); }catch(e){}
+  actualizarPausa();
+}
+function reanudarVoz(){
+  if(!vozPausada) return;
+  vozPausada = false;
+  const resto = vozTexto.slice(vozPos);
+  if(resto.trim()) hablar(resto, vozAlTerminar);
+  else { vozEnCurso = false; actualizarPausa(); if(vozAlTerminar) vozAlTerminar(); }
 }
 const MAPA_SUBTEMA = {
   algoritmos:"algoritmo", aritmetica:"aritmética", bucles:"bucle (programación)",
@@ -1685,6 +1783,8 @@ const $ = id => document.getElementById(id);
 function mostrar(id){
   if("speechSynthesis" in window) speechSynthesis.cancel();
   vozToken++;
+  vozPausada = false; vozEnCurso = false;
+  actualizarPausa();
   soltarWakeLock();
   clearTimeout(autoVozTimer);
   if(recVoz){ try{ recVoz.stop(); }catch(e){} recVoz = null; actualizarBotonVoz(); }
@@ -1798,19 +1898,36 @@ const verNum = $("ver-num");
 if(verNum) verNum.textContent = VERSION;
 /* Pantalla completa: se pide en el primer toque y se mantiene todo el tiempo.
    El navegador exige un toque del usuario, así que se pide en el primer toque
-   en cualquier parte, al cambiar de pantalla y al volver a la app. */
+   en cualquier parte, al cambiar de pantalla y al volver a la app.
+   IMPORTANTE: los oyentes NO son pasivos: en Android Chrome una petición hecha
+   desde un oyente passive:false... en realidad se debe hacer con gesto real.
+   Por eso se llama en pointerdown/touchend/click para cubrir todos los casos. */
+let ultimaPantallaCompleta = 0;
 function pedirPantallaCompleta(){
   const el = document.documentElement;
-  const ya = document.fullscreenElement || document.webkitFullscreenElement;
-  if(ya) return;
+  if(document.fullscreenElement || document.webkitFullscreenElement) return;
+  const ahora = Date.now();
+  if(ahora - ultimaPantallaCompleta < 400) return;   // no martillear
+  ultimaPantallaCompleta = ahora;
   const pedir = el.requestFullscreen || el.webkitRequestFullscreen;
-  if(pedir){ try{ Promise.resolve(pedir.call(el)).catch(()=>{}); }catch(e){} }
+  if(!pedir) return;
+  try{
+    const p = pedir.call(el, { navigationUI: "hide" });
+    if(p && p.catch) p.catch(()=>{});
+  }catch(e){}
 }
-["pointerdown","touchstart","click","keydown"].forEach(ev=>{
-  document.addEventListener(ev, pedirPantallaCompleta, {passive:true});
+/* Los 6 eventos cubren: toque largo, arrastre, pulsación normal y teclado. */
+["pointerdown","pointerup","touchstart","touchend","click","keydown"].forEach(ev=>{
+  document.addEventListener(ev, pedirPantallaCompleta, {passive:false});
 });
 document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) pedirPantallaCompleta(); });
 window.addEventListener("focus", pedirPantallaCompleta);
+/* Si el sistema nos echa (rotación de pantalla, etc.), volvemos a entrar. */
+document.addEventListener("fullscreenchange", ()=>{
+  if(!document.fullscreenElement && !document.webkitFullscreenElement){
+    setTimeout(pedirPantallaCompleta, 300);
+  }
+});
 
 /* ===================== SINCRONIZACIÓN (ntfy.sh, gratis) ===================== */
 const CLAVE_SYNC = "alignerr-simulador-sync-code-v1";
@@ -1925,12 +2042,20 @@ $("btn-comenzar").onclick = ()=>{ pedirPantallaCompleta(); iniciar(); };
 $("btn-stats").onclick = mostrarEstadisticas;
 $("btn-herr").onclick = ()=>{ mostrar("pantalla-herr"); };
 $("btn-volver-herr").onclick = ()=>{ mostrar("pantalla-menu"); };
+/* Herramientas ahora es un menú: cada botón abre su subpantalla,
+   y todas vuelven a Herramientas. */
+document.querySelectorAll("[data-herr]").forEach(b=>{
+  b.onclick = ()=> mostrar(b.dataset.herr);
+});
+document.querySelectorAll(".volver-herr").forEach(b=>{
+  b.onclick = ()=> mostrar("pantalla-herr");
+});
 $("btn-desafios").onclick = mostrarDesafios;
 $("btn-olvidos").onclick = mostrarOlvido;
 $("btn-temario").onclick = ()=>{ mostrarTemario(); mostrar("pantalla-temario"); };
-$("btn-volver4").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-menu"); };
-$("btn-volver3").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-menu"); };
-$("btn-volver5").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-menu"); };
+$("btn-volver4").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-herr-estudio"); };
+$("btn-volver3").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-herr-estudio"); };
+$("btn-volver5").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-herr-estudio"); };
 $("btn-volver6").onclick = ()=>{ cancelarTimer(); mostrar("pantalla-menu"); };
 $("btn-desafio").onclick = ()=>{
   const q = E.preguntas[E.actual];
@@ -2286,6 +2411,7 @@ function pararVoz(){
   if(recVoz){ try{ recVoz.stop(); }catch(e){} recVoz = null; actualizarBotonVoz(); }
   if("speechSynthesis" in window) speechSynthesis.cancel();
   vozToken++;
+  vozPausada = false; vozEnCurso = false;
   actualizarPausa();
   soltarWakeLock();
 }
@@ -2304,8 +2430,8 @@ $("btn-tranquilo").onclick = ()=>{
 };
 $("btn-pausa").onclick = ()=>{
   if(!("speechSynthesis" in window)) return;
-  if(speechSynthesis.paused) speechSynthesis.resume();
-  else if(speechSynthesis.speaking) speechSynthesis.pause();
+  if(vozPausada) reanudarVoz();
+  else if(vozEnCurso) pausarVoz();
   actualizarPausa();
 };
 $("btn-masinfo").onclick = ()=>{
@@ -2753,13 +2879,16 @@ function avisarApuro(sinTono){
   if(!sinTono) tocarTono([1100, 1500], 0.06, "sine");
 }
 
-/* Relámpago de aviso justo antes de pasar a la siguiente pantalla:
-   espera 1 s → relámpago (1 s) → 2 s más → siguiente. */
+/* Relámpago de aviso: se lanza al terminar la lectura y, 1 s después, se sigue. */
 function relampagoYAvanzar(idx, esperaAntes){
   setTimeout(()=>{
-    avisarApuro();
-    setTimeout(()=>avanzarSiSigue(idx), 1000 + 2000);
-  }, (esperaAntes == null ? 1000 : esperaAntes));
+    avisarApuro(true);
+    setTimeout(()=>avanzarSiSigue(idx), 1000);
+  }, (esperaAntes == null ? 0 : esperaAntes));
+}
+/* Sin relámpago: solo espera y sigue (al acertar) */
+function esperarYAvanzar(idx, ms){
+  setTimeout(()=>avanzarSiSigue(idx), (ms == null ? 1000 : ms));
 }
 function responder(idx){
   pararVoz();
@@ -2784,21 +2913,21 @@ function responder(idx){
   $("q-puntos").textContent = "Aciertos: "+E.aciertos;
   $("btn-siguiente").disabled = false;
   if(ok){
+    // Al acertar NO hay relámpago: solo se espera 1 s tras la lectura y se sigue.
     const idxRespondida = E.actual;
     const texto = "¡Correcto! "+q.explicacion;
     let disparado = false;
-    const aviso = ()=>{ if(disparado) return; disparado = true; relampagoYAvanzar(idxRespondida, 1000); };
+    const seguir = ()=>{ if(disparado) return; disparado = true; esperarYAvanzar(idxRespondida, 1000); };
     if(vozauto){
-      // Al terminar de leer la respuesta: 1 s → relámpago → 2 s → siguiente.
-      leerNuevo(texto, aviso);
-      // Respaldo: si el navegador no avisa del final de la lectura, avisar igualmente.
-      setTimeout(aviso, Math.max(2500, texto.length*80));
+      leerNuevo(texto, seguir);
+      // Respaldo: si el navegador no avisa del final de la lectura, seguir igualmente.
+      setTimeout(seguir, Math.max(2500, texto.length*80));
     }else{
-      aviso();
+      seguir();
     }
   }else{
-    // Al fallar también sale el relámpago (sin tictac: ya suena el aviso de fallo).
-    // No avanza solo: se lee el fallo y se espera a pulsar "Siguiente".
+    // Al fallar: el relámpago sale cuando termina la lectura (sin tictac, porque
+    // ya suena el aviso de fallo). No avanza solo: se espera a pulsar "Siguiente".
     if(vozauto) leerNuevo($("q-feedback").textContent, ()=>{ escucharComando(); avisarApuro(true); });
     else avisarApuro(true);
   }
@@ -2819,12 +2948,12 @@ function tiempoAgotado(){
   E.respondidas.add(E.actual);
   ultimaCorrecta = false;
   $("btn-siguiente").disabled = false;
-  // Al terminar de leer la respuesta: 1 s → relámpago (2 s) → 2 s → siguiente.
+  // Al terminar de leer la respuesta: relámpago y 1 s después se sigue.
   const idxAgotada = E.actual;
   if(vozauto){
-    leerNuevo($("q-feedback").textContent, ()=>{ escucharComando(); relampagoYAvanzar(idxAgotada, 1000); });
+    leerNuevo($("q-feedback").textContent, ()=>{ escucharComando(); relampagoYAvanzar(idxAgotada); });
   }else{
-    relampagoYAvanzar(idxAgotada, 1000);
+    relampagoYAvanzar(idxAgotada);
   }
 }
 function saltarPregunta(){
