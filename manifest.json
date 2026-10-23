@@ -4,8 +4,9 @@
   "description": "Práctica para el examen de ingreso Alignerr: Matemáticas y Programación.",
   "start_url": "./index.html",
   "scope": "./",
-  "display": "standalone",
+  "display": "fullscreen",
   "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
   "background_color": "#0d0d14",
   "theme_color": "#7c6cf0",
   "icons": [
