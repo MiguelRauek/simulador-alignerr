@@ -688,7 +688,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.33";
+const VERSION = "2.34";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -2879,11 +2879,11 @@ function avisarApuro(sinTono){
   if(!sinTono) tocarTono([1100, 1500], 0.06, "sine");
 }
 
-/* Relámpago de aviso: se lanza al terminar la lectura y, 1 s después, se sigue. */
+/* Relámpago de aviso: se lanza al terminar la lectura y, 2 s después, se sigue. */
 function relampagoYAvanzar(idx, esperaAntes){
   setTimeout(()=>{
     avisarApuro(true);
-    setTimeout(()=>avanzarSiSigue(idx), 1000);
+    setTimeout(()=>avanzarSiSigue(idx), 2000);
   }, (esperaAntes == null ? 0 : esperaAntes));
 }
 /* Sin relámpago: solo espera y sigue (al acertar) */
