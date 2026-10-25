@@ -22,7 +22,7 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   /* REGLA: nada de tamaños fijos. Todo escala con la pantalla (ancho). */
-  html{font-size:clamp(14px, 4.1vw, 22px);}
+  html{font-size:clamp(14px, 4.1vw, 19px);}
   /* Si la pantalla es BAJA (móvil apaisado, ventana pequeña) todo se reduce
      proporcionalmente para que siga cabiendo entero y no haya que hacer scroll. */
   @media (max-height:760px){ html{font-size:clamp(13px,3.7vw,18px);} }
@@ -112,10 +112,12 @@
     overflow:hidden;}
   .caja-menu .fila-botones{flex:1 1 0;min-height:0;}
   .caja-menu .fila-botones > button{font-size:1.05em;}
-  /* Menú de Herramientas: los botones se reparten TODO el alto disponible */
+  /* Menú principal: Estadísticas y Herramientas más finos (~1/3) */
+  .caja-menu .menu-sec{flex:0 0 auto;}
+  .menu-sec > button{flex:1 1 0;font-size:.9rem;padding:.5em .6em;min-height:2.2em;}
+  /* Menú de Herramientas: los 6 botones se reparten TODO el alto disponible */
   .lista-menu > button{flex:1 1 auto;min-height:2.6em;font-size:1.15em;font-weight:700;}
   .lista-menu > button:active{opacity:.8;}
-  .lbl{color:var(--sub);font-size:.82rem;flex:0 0 auto;align-self:center;}
   .card-menu .contador{font-size:.68rem;line-height:1.25;margin-top:.25em;color:var(--sub);}
   .card-menu #contador-disp{margin:.15em 0 0;font-size:.72rem;flex:0 0 auto;}
   /* Cada fila del menú se reparte EL ALTO QUE SOBRE en partes iguales
@@ -124,7 +126,15 @@
   .caja-menu .card-menu > .fila,
   .caja-menu .card-menu > .num-presets,
   .caja-menu .card-menu > .num-fila{flex:1 1 auto;min-height:0;}
-  .caja-menu .card-menu > .primario{flex:1.4 1 auto;min-height:0;}
+  /* "Comenzar examen" es lo más grande del menú */
+  .caja-menu .card-menu > .primario{flex:2.4 1 auto;min-height:0;font-size:1.15em;}
+  /* Tema y nivel: medianos */
+  .caja-menu .card-menu > .fila-tema,
+  .caja-menu .card-menu > .fila-nivel{flex:1.15 1 auto;}
+  /* Número de preguntas y tiempo: los más pequeños */
+  .caja-menu .card-menu > .num-presets,
+  .caja-menu .card-menu > .num-fila,
+  .caja-menu .card-menu > .fila-timer{flex:.85 1 auto;}
   .caja-menu .card-menu > .nota{flex:0 0 auto;}
 
   /* ---- Número de preguntas ---- */
@@ -159,15 +169,23 @@
   #q-timer{font-weight:700;font-size:.9rem;}
   .badge{font-size:.7rem;font-weight:700;padding:.1em .35em;border-radius:.4em;color:#0d0d14;}
   .cuerpo{flex:1;overflow-y:auto;width:100%;max-width:720px;margin:0 auto;padding:.5em .75em .6em;
-    display:flex;flex-direction:column;gap:.35em;min-height:0;}
+    display:flex;flex-direction:column;gap:.28em;min-height:0;}
   #q-pregunta{font-size:1.05rem;font-weight:700;margin:0;}
+  /* Barra de lectura pegada a la pregunta: Pausar · Voz · Leer */
+  .barra-lectura{display:flex;gap:.35em;flex:0 0 auto;align-items:stretch;}
+  .barra-lectura > button{flex:1 1 0;min-height:2.4em;font-size:.95em;padding:.5em .6em;}
+  .barra-lectura > #btn-pausa{flex:1.5 1 0;font-size:1.05em;}
+  /* Opciones: separadas entre sí y con letra más grande */
+  #q-opciones{display:flex;flex-direction:column;gap:.45em;flex:0 0 auto;}
   .opcion{display:block;width:100%;text-align:left;background:var(--card);color:var(--text);
-    border:1.5px solid var(--b,#4a4a66);margin:0;}
+    border:1.5px solid var(--b,#4a4a66);margin:0;font-size:1.08em;line-height:1.32;
+    padding:.6em .8em;}
   .opcion:active{background:var(--card2);}
   .opcion.ok{background:var(--ok);border-color:var(--ok);color:#0d0d14;}
-  .opcion.bad{background:var(--bad);border-color:var(--bad);color:#fff;}
+  .opcion.bad{background:var(--bad);border-color:var(--bad);color:#0d0d14;}
   .opcion:disabled{cursor:default;}
   #q-feedback{font-size:1rem;font-weight:600;margin:0;white-space:pre-wrap;min-height:1.2em;}
+  #q-feedback:empty,#q-mas:empty{display:none;}
   #btn-siguiente{display:block;margin-left:auto;margin-top:0;background:var(--accent);
     color:#fff;border:none;font-size:1rem;position:sticky;bottom:0;flex:0 0 auto;
     box-shadow:0 -4px 12px rgba(0,0,0,.35);}
@@ -204,10 +222,14 @@
   .vacio{color:var(--sub);font-size:.82rem;}
 
   /* ---- Marcas (Desafío / Olvido) ---- */
-  .fila-marcas{display:flex;gap:.3em;flex-wrap:wrap;margin:0;}
-  .fila-marcas > button{flex:1 1 0;}
-  #btn-desafio{background:var(--card2);color:var(--ambar);
-    border:1.5px solid var(--ambar);}
+  .fila-marcas{display:flex;gap:.35em;flex-wrap:wrap;margin:0;flex:0 0 auto;}
+  .fila-marcas > button{flex:1 1 0;min-height:2em;padding:.45em .6em;}
+  /* Marcas en 2 columnas: Desafío · Comentar / Saltar · Olvido */
+  .rejilla-marcas{display:grid;grid-template-columns:1fr 1fr;gap:.35em;flex:0 0 auto;}
+  .rejilla-marcas > button{min-height:2em;padding:.45em .6em;font-size:.95em;}
+  /* Desafío: rosa, para no confundirse con el naranja de Programación */
+  #btn-desafio{background:var(--card2);color:#fb7185;
+    border:1.5px solid #fb7185;}
   #btn-desafio.en-desafio{color:var(--ok);border-color:var(--ok);}
   #btn-olvido{background:rgba(167,139,250,.16);color:#a78bfa;
     border:1.5px solid #a78bfa;margin:0;}
@@ -216,13 +238,16 @@
   #btn-masinfo{background:var(--card2);color:#34d399;border:1.5px solid #34d399;margin:0;}
   #btn-masinfo.en-masinfo{color:var(--ok);border-color:var(--ok);}
   #btn-repetir-exp{background:var(--card2);color:#60a5fa;border:1.5px solid #60a5fa;margin:0;}
-  #btn-saltar{background:var(--card2);color:var(--ambar);border:1.5px solid var(--ambar);}
+  /* Saltar: gris neutro, para no juntar tres naranjas */
+  #btn-saltar{background:var(--card2);color:#94a3b8;border:1.5px solid #94a3b8;}
   #btn-tranquilo{background:var(--card2);color:#38bdf8;border:1.5px solid #38bdf8;}
   #btn-voz{background:var(--card2);color:#f472b6;border:1.5px solid #f472b6;}
   #btn-voz.escuchando{background:#f472b6;color:#0d0d14;animation:vozPulso 1s ease-in-out infinite;}
   @keyframes vozPulso{0%,100%{opacity:1}50%{opacity:.55}}
-  /* Pausa: junto a la respuesta, ocupa todo el ancho */
-  #btn-pausa.btn-pausa-respuesta{display:block;width:100%;background:var(--card2);color:#fbbf24;
+  /* Comentar / proponer: cian, para que se lea entero y no se confunda */
+  #btn-reportar{background:var(--card2);color:#22d3ee;border:1.5px solid #22d3ee;}
+  /* Pausa: en la barra de lectura, destacada */
+  #btn-pausa.btn-pausa-respuesta{display:block;background:rgba(251,191,36,.14);color:#fbbf24;
     border:2px solid #fbbf24;margin:0;letter-spacing:.2px;}
   #q-mas{font-size:.9rem;margin:0;white-space:pre-wrap;color:#34d399;
     background:rgba(52,211,153,.08);border-radius:var(--radio);padding:.4em .55em;}
@@ -295,12 +320,12 @@
     </div>
 
     <div class="card card-menu relleno">
-      <div class="fila">
+      <div class="fila fila-tema">
         <button class="rect" id="m-mat" style="--c:#4a9eff">Matemáticas</button>
         <button class="rect" id="m-prog" style="--c:#ff9f43">Programación</button>
       </div>
 
-      <div class="fila">
+      <div class="fila fila-nivel">
         <button class="rect" id="n-1" style="--c:#22d3ee">Medio</button>
         <button class="rect" id="n-2" style="--c:#a78bfa">Difícil</button>
         <button class="rect" id="n-3" style="--c:#f472b6">Muy difícil</button>
@@ -322,7 +347,7 @@
       <button class="primario" id="btn-comenzar">Comenzar examen</button>
       <p class="nota" id="contador-disp"></p>
 
-      <div class="fila" style="margin-top:6px;align-items:center">
+      <div class="fila fila-timer" style="margin-top:6px;align-items:center">
         <label for="timer" class="lbl">⏱ Tiempo:</label>
         <select id="timer" style="flex:1">
           <option>Sin límite</option>
@@ -340,9 +365,9 @@
     </div>
 
     <!-- Acceso a secciones: Estadísticas y Herramientas -->
-    <div class="fila-botones">
-      <button class="secundario grande" id="btn-stats">📊 Estadísticas</button>
-      <button class="secundario grande" id="btn-herr">🧰 Herramientas</button>
+    <div class="fila-botones menu-sec">
+      <button class="secundario" id="btn-stats">📊 Estadísticas</button>
+      <button class="secundario" id="btn-herr">🧰 Herramientas</button>
     </div>
     <p class="nota" style="text-align:center;margin-top:6px;color:var(--sub)">Versión <span id="ver-num"></span></p>
   </div>
@@ -500,22 +525,31 @@
   </header>
   <div class="cuerpo">
     <p id="q-pregunta"></p>
-    <div class="fila-marcas">
-      <button id="btn-leer">🔊 Leer pregunta</button>
+
+    <!-- Barra de lectura: pegada a la pregunta, siempre a la vista -->
+    <div class="barra-lectura">
+      <button id="btn-pausa" class="btn-pausa-respuesta" style="display:none">⏸ Pausar</button>
       <button id="btn-voz">🎤 Responder por voz</button>
-      <button id="btn-desafio">⚔️ Marcar como Desafío (5×)</button>
-      <button id="btn-reportar">💬 Comentar / proponer</button>
+      <button id="btn-leer">🔊 Leer pregunta</button>
+    </div>
+
+    <div id="q-opciones"></div>
+
+    <div class="rejilla-marcas">
+      <button id="btn-desafio">⚔️ Desafío (5×)</button>
+      <button id="btn-reportar">💬 Comentar</button>
       <button id="btn-saltar">⏭ Saltar</button>
+      <button id="btn-olvido">🧠 Olvido</button>
       <button id="btn-tranquilo">📖 Leer tranquilo</button>
     </div>
-    <div id="q-opciones"></div>
-    <button id="btn-olvido">🧠 Marcar como Olvido (no sale)</button>
+
     <p id="q-feedback"></p>
     <div id="q-mas"></div>
-    <button id="btn-masinfo">❓ Más explicación</button>
-    <button id="btn-repetir-exp">🔁 Repetir explicación</button>
+    <div class="fila-marcas">
+      <button id="btn-masinfo">❓ Más explicación</button>
+      <button id="btn-repetir-exp">🔁 Repetir explicación</button>
+    </div>
     <div id="q-web" style="display:none"></div>
-    <button id="btn-pausa" class="btn-pausa-respuesta" style="display:none">⏸ Pausar lectura de la respuesta</button>
     <button id="btn-siguiente" disabled>Siguiente →</button>
   </div>
 </section>
@@ -688,7 +722,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.34";
+const VERSION = "2.35";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -1007,8 +1041,8 @@ function actualizarPausa(){
   const b = $("btn-pausa");
   if(!b) return;
   if(!("speechSynthesis" in window)){ b.style.display = "none"; return; }
-  if(vozPausada){ b.style.display = ""; b.textContent = "▶ Reanudar lectura"; }
-  else if(vozEnCurso){ b.style.display = ""; b.textContent = "⏸ Pausar lectura de la respuesta"; }
+  if(vozPausada){ b.style.display = ""; b.textContent = "▶ Reanudar"; }
+  else if(vozEnCurso){ b.style.display = ""; b.textContent = "⏸ Pausar"; }
   else b.style.display = "none";
 }
 function hablar(texto, alTerminar, btn){
