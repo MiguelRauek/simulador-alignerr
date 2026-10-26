@@ -22,12 +22,13 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   /* REGLA: nada de tamaños fijos. Todo escala con la pantalla (ancho). */
-  html{font-size:clamp(14px, 4.1vw, 19px);}
+  /* --escala la ajusta el programa si una pregunta muy larga no cabe */
+  html{font-size:calc(clamp(14px, 4.1vw, 19px) * var(--escala, 1));}
   /* Si la pantalla es BAJA (móvil apaisado, ventana pequeña) todo se reduce
      proporcionalmente para que siga cabiendo entero y no haya que hacer scroll. */
-  @media (max-height:760px){ html{font-size:clamp(13px,3.7vw,18px);} }
-  @media (max-height:620px){ html{font-size:clamp(12px,3.3vw,15px);} }
-  @media (max-height:480px){ html{font-size:clamp(11px,3vw,13px);} }
+  @media (max-height:760px){ html{font-size:calc(clamp(13px,3.7vw,18px) * var(--escala,1));} }
+  @media (max-height:620px){ html{font-size:calc(clamp(12px,3.3vw,15px) * var(--escala,1));} }
+  @media (max-height:480px){ html{font-size:calc(clamp(11px,3vw,13px) * var(--escala,1));} }
   html,body{height:100%;margin:0;padding:0;background:var(--bg);color:var(--text);
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,"DejaVu Sans",sans-serif;
     line-height:1.42;overflow:hidden;}
@@ -92,6 +93,14 @@
   .rect.sel{background:var(--c);color:#0d0d14;border-color:var(--c);}
   .rect:active{opacity:.85;}
 
+  /* ---- FORMAS ----
+     Píldora (extremos redondos): acciones y navegación.
+     Rectángulo redondeado: opciones de respuesta y contenido.
+     Círculo: cantidades (5, 10, 15...).
+     Etiqueta (esquina poco redondeada): marcas (Desafío, Olvido, Comentar...). */
+  .primario,.secundario,.peligro,#btn-siguiente,
+  #btn-pausa,#btn-voz,#btn-leer,.lista-menu > button{
+    border-radius:999px;}
   .primario{display:block;width:100%;background:var(--accent);color:#fff;border:none;}
   .primario:active{background:var(--accent2);}
   .secundario{background:var(--card2);color:var(--text);border:none;}
@@ -99,6 +108,13 @@
   .peligro{background:var(--card2);color:var(--bad);border:none;}
   /* Botones grandes de sección (Estadísticas / Herramientas) */
   .secundario.grande{font-size:1.05em;}
+  /* Cantidades: círculos */
+  /* Cantidades (5, 10, 15...): círculos */
+  #num-presets .rect{border-radius:50%;aspect-ratio:1/1;padding:.2em;min-height:0;flex:1 1 0;}
+  /* Marcas: forma de etiqueta */
+  .rejilla-marcas > button,#btn-desafio,#btn-olvido,#btn-reportar,#btn-saltar,
+  #btn-tranquilo,#btn-masinfo,#btn-repetir-exp,#btn-r-dictar{
+    border-radius:.35em;}
 
   /* ---- Resumen de estadísticas en el menú principal ---- */
   .resumen-est{padding:.5em .6em;}
@@ -138,7 +154,7 @@
   .caja-menu .card-menu > .nota{flex:0 0 auto;}
 
   /* ---- Número de preguntas ---- */
-  .num-presets{display:flex;gap:.3em;margin-bottom:.25em;min-height:0;flex:1 1 auto;}
+  .num-presets{display:flex;gap:.3em;margin-bottom:.25em;min-height:0;flex:1 1 auto;align-items:center;}
   .num-fila{display:flex;align-items:center;gap:.5em;min-height:0;flex:1 1 auto;}
   input[type=number]{flex:1;background:var(--card2);color:var(--text);
     border:1.5px solid var(--accent);border-radius:var(--radio);padding:.5em .6em;
@@ -170,7 +186,8 @@
   .badge{font-size:.7rem;font-weight:700;padding:.1em .35em;border-radius:.4em;color:#0d0d14;}
   .cuerpo{flex:1;overflow-y:auto;width:100%;max-width:720px;margin:0 auto;padding:.5em .75em .6em;
     display:flex;flex-direction:column;gap:.28em;min-height:0;}
-  #q-pregunta{font-size:1.05rem;font-weight:700;margin:0;}
+  /* La pregunta destaca: el doble de grande que el resto */
+  #q-pregunta{font-size:1.9rem;font-weight:800;line-height:1.25;margin:0;}
   /* Barra de lectura pegada a la pregunta: Pausar · Voz · Leer */
   .barra-lectura{display:flex;gap:.35em;flex:0 0 auto;align-items:stretch;}
   .barra-lectura > button{flex:1 1 0;min-height:2.4em;font-size:.95em;padding:.5em .6em;}
@@ -227,13 +244,15 @@
   /* Marcas en 2 columnas: Desafío · Comentar / Saltar · Olvido */
   .rejilla-marcas{display:grid;grid-template-columns:1fr 1fr;gap:.35em;flex:0 0 auto;}
   .rejilla-marcas > button{min-height:2em;padding:.45em .6em;font-size:.95em;}
-  /* Desafío: rosa, para no confundirse con el naranja de Programación */
-  #btn-desafio{background:var(--card2);color:#fb7185;
-    border:1.5px solid #fb7185;}
-  #btn-desafio.en-desafio{color:var(--ok);border-color:var(--ok);}
-  #btn-olvido{background:rgba(167,139,250,.16);color:#a78bfa;
-    border:1.5px solid #a78bfa;margin:0;}
-  #btn-olvido.en-olvido{color:var(--bad);border-color:var(--bad);background:rgba(248,113,113,.14);}
+  /* Desafío (izquierda, verde) y Olvido (derecha, rojo) en la misma línea */
+  .fila-desafio-olvido{display:flex;gap:.5em;flex:0 0 auto;}
+  .fila-desafio-olvido > button{flex:1 1 0;min-height:2em;padding:.45em .6em;}
+  #btn-desafio{background:rgba(74,222,128,.14);color:var(--ok);
+    border:1.5px solid var(--ok);}
+  #btn-desafio.en-desafio{background:var(--ok);color:#0d0d14;}
+  #btn-olvido{background:rgba(255,92,92,.14);color:var(--bad);
+    border:1.5px solid var(--bad);margin:0;}
+  #btn-olvido.en-olvido{background:var(--bad);color:#0d0d14;}
   #btn-leer{background:var(--card2);color:#4a9eff;border:1.5px solid #4a9eff;}
   #btn-masinfo{background:var(--card2);color:#34d399;border:1.5px solid #34d399;margin:0;}
   #btn-masinfo.en-masinfo{color:var(--ok);border-color:var(--ok);}
@@ -246,9 +265,15 @@
   @keyframes vozPulso{0%,100%{opacity:1}50%{opacity:.55}}
   /* Comentar / proponer: cian, para que se lea entero y no se confunda */
   #btn-reportar{background:var(--card2);color:#22d3ee;border:1.5px solid #22d3ee;}
+  /* Dictado: se ve claramente cuando esta escuchando */
+  #btn-r-dictar.dictando{background:#f472b6;color:#0d0d14;border-color:#f472b6;
+    animation:vozPulso 1s ease-in-out infinite;}
+  #btn-r-dictar:disabled{opacity:.5;}
   /* Pausa: en la barra de lectura, destacada */
   #btn-pausa.btn-pausa-respuesta{display:block;background:rgba(251,191,36,.14);color:#fbbf24;
     border:2px solid #fbbf24;margin:0;letter-spacing:.2px;}
+  #btn-pausa.btn-pausa-respuesta:disabled{opacity:.4;cursor:default;}
+  #btn-pausa.btn-pausa-respuesta.activo{background:rgba(251,191,36,.28);}
   #q-mas{font-size:.9rem;margin:0;white-space:pre-wrap;color:#34d399;
     background:rgba(52,211,153,.08);border-radius:var(--radio);padding:.4em .55em;}
   #q-web,.web-res{font-size:.88rem;margin:0;white-space:pre-wrap;color:#4a9eff;
@@ -528,25 +553,28 @@
 
     <!-- Barra de lectura: pegada a la pregunta, siempre a la vista -->
     <div class="barra-lectura">
-      <button id="btn-pausa" class="btn-pausa-respuesta" style="display:none">⏸ Pausar</button>
+      <button id="btn-pausa" class="btn-pausa-respuesta">⏸ Pausar</button>
       <button id="btn-voz">🎤 Responder por voz</button>
       <button id="btn-leer">🔊 Leer pregunta</button>
     </div>
 
     <div id="q-opciones"></div>
 
-    <div class="rejilla-marcas">
+    <div class="fila-marcas fila-desafio-olvido">
       <button id="btn-desafio">⚔️ Desafío (5×)</button>
+      <button id="btn-olvido">🧠 Olvido</button>
+    </div>
+
+    <div class="fila-marcas">
       <button id="btn-reportar">💬 Comentar</button>
       <button id="btn-saltar">⏭ Saltar</button>
-      <button id="btn-olvido">🧠 Olvido</button>
       <button id="btn-tranquilo">📖 Leer tranquilo</button>
     </div>
 
     <p id="q-feedback"></p>
     <div id="q-mas"></div>
     <div class="fila-marcas">
-      <button id="btn-masinfo">❓ Más explicación</button>
+      <button id="btn-masinfo">❓ Explicación</button>
       <button id="btn-repetir-exp">🔁 Repetir explicación</button>
     </div>
     <div id="q-web" style="display:none"></div>
@@ -564,7 +592,7 @@
     <textarea id="r-texto" rows="5" style="width:100%;box-sizing:border-box;background:#14141f;color:#e2e8f0;border:1px solid #333;border-radius:10px;padding:10px;font-size:1rem"
       placeholder="Escribe aquí tu propuesta o la pregunta nueva (pregunta, opciones y respuesta correcta)."></textarea>
     <div class="fila-marcas" style="margin-top:10px">
-      <button id="btn-r-dictar">🎤 Dictar (activo)</button>
+      <button id="btn-r-dictar">🎤 Dictar</button>
       <button class="primario" id="btn-r-guardar">💾 Guardar comentario</button>
       <button class="secundario" id="btn-r-cancelar">✖ Cancelar</button>
     </div>
@@ -722,7 +750,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.35";
+const VERSION = "2.36";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -1040,10 +1068,22 @@ let vozPausada = false, vozTexto = "", vozPos = 0, vozAlTerminar = null, vozEnCu
 function actualizarPausa(){
   const b = $("btn-pausa");
   if(!b) return;
-  if(!("speechSynthesis" in window)){ b.style.display = "none"; return; }
-  if(vozPausada){ b.style.display = ""; b.textContent = "▶ Reanudar"; }
-  else if(vozEnCurso){ b.style.display = ""; b.textContent = "⏸ Pausar"; }
-  else b.style.display = "none";
+  // IMPORTANTE: el botón NUNCA se oculta. Si desapareciera, la barra cambiaría
+  // de alto y todos los botones de abajo se moverían, y el usuario podría
+  // pulsar uno distinto del que quería. Solo se desactiva.
+  if(!("speechSynthesis" in window)){
+    b.disabled = true;
+    b.textContent = "⏸ Pausar";
+    b.classList.remove("activo");
+    return;
+  }
+  if(vozPausada){
+    b.disabled = false; b.textContent = "▶ Reanudar"; b.classList.add("activo");
+  }else if(vozEnCurso){
+    b.disabled = false; b.textContent = "⏸ Pausar"; b.classList.add("activo");
+  }else{
+    b.disabled = true; b.textContent = "⏸ Pausar"; b.classList.remove("activo");
+  }
 }
 function hablar(texto, alTerminar, btn){
   const token = ++vozToken;
@@ -1462,7 +1502,7 @@ function actualizarBotonMasInfo(){
   const b = $("btn-masinfo");
   if(!b) return;
   // Si ya se ha pedido una explicación de esta pregunta, el botón ofrece otra.
-  b.textContent = E.masInfoN ? "🔄 Otra explicación" : "❓ Más explicación";
+  b.textContent = E.masInfoN ? "❓ Más explicación" : "❓ Explicación";
   b.classList.remove("en-masinfo");
 }
 function mostrarMasInfoEnQuiz(q){
@@ -1554,8 +1594,9 @@ function abrirReporte(conPregunta){
   reportePausaTimer = false;
   if(reporteDesdeQuiz && E.intervalo){ cancelarTimer(); reportePausaTimer = true; }
   mostrar("pantalla-reporte");
-  $("r-texto").focus();
-  // el micrófono se activa solo al abrir: puedes dictar y escribir a la vez
+  // No se abre el teclado solo: taparía la pantalla y estorbaría al dictar.
+  // El micrófono se activa solo al abrir, para poder dictar sin tocar el móvil.
+  pintarBotonDictado();
   iniciarDictadoComentario();
 }
 function cerrarReporte(){
@@ -1824,6 +1865,8 @@ function mostrar(id){
   if(recVoz){ try{ recVoz.stop(); }catch(e){} recVoz = null; actualizarBotonVoz(); }
   document.querySelectorAll(".pantalla").forEach(s=>s.classList.remove("activa"));
   $(id).classList.add("activa");
+  // La reduccion de letra es solo para el examen: al salir se vuelve al tamaño normal.
+  if(id !== "pantalla-quiz") document.documentElement.style.setProperty("--escala", "1");
   // El examen y los resultados ocupan la pantalla entera y no se desplazan
   document.body.classList.toggle("sin-scroll", id === "pantalla-res" || id === "pantalla-quiz");
   window.scrollTo(0,0);
@@ -2473,7 +2516,7 @@ $("btn-masinfo").onclick = ()=>{
   if(!q) return;
   // cada pulsación pide una explicación distinta a Gemini
   E.masInfoN = (E.masInfoN || 0) + 1;
-  $("btn-masinfo").textContent = "🔄 Otra explicación";
+  $("btn-masinfo").textContent = "❓ Más explicación";
   explicarConGemini(q, $("q-web"), $("btn-masinfo"), E.masInfoN);
 };
 $("btn-repetir-exp").onclick = ()=>{
@@ -2545,53 +2588,103 @@ $("btn-rep-exportar").onclick = ()=>{
 /* ---- Dictado del comentario: escribe y dicta a la vez ---- */
 let dictadoRec = null;
 let dictadoActivo = false;
+let dictadoReinicio = null;
+let dictadoBase = "";          // texto ya confirmado (escrito a mano o dictado)
+
+function dictadoSoportado(){
+  return ("webkitSpeechRecognition" in window) || ("SpeechRecognition" in window);
+}
+function pintarBotonDictado(){
+  const b = $("btn-r-dictar");
+  if(!b) return;
+  if(!dictadoSoportado()){
+    b.textContent = "🎤 Dictar (no disponible)";
+    b.disabled = true;
+    return;
+  }
+  b.disabled = false;
+  b.textContent = dictadoActivo ? "⏹ Parar dictado" : "🎤 Dictar";
+  b.classList.toggle("dictando", dictadoActivo);
+}
 function iniciarDictadoComentario(){
-  if(!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)){
-    $("r-msg").textContent = "Tu navegador no permite dictado por voz.";
+  if(!dictadoSoportado()){
+    $("r-msg").textContent = "Este navegador no permite dictado. Escribe el comentario con el teclado.";
+    pintarBotonDictado();
     return;
   }
   if(dictadoActivo) return;
+  clearTimeout(dictadoReinicio);
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const rec = new SR();
   dictadoRec = rec;
+  dictadoBase = ($("r-texto").value || "").trim();
   rec.lang = "es-ES";
-  rec.continuous = true;                 // dictado continuo
-  rec.interimResults = false;
+  rec.continuous = true;
+  rec.interimResults = true;      // se ve lo que va oyendo mientras habla
   rec.maxAlternatives = 1;
+
+  rec.onstart = ()=>{
+    dictadoActivo = true;
+    pintarBotonDictado();
+    $("r-msg").textContent = "🎤 Escuchando… habla con normalidad. Pulsa «Parar dictado» al terminar.";
+  };
   rec.onresult = ev=>{
-    const ta = $("r-texto");
-    let fin = "";
+    let finalTxt = "", interino = "";
     for(let i = ev.resultIndex; i < ev.results.length; i++){
-      if(ev.results[i].isFinal) fin += ev.results[i][0].transcript + " ";
+      const r = ev.results[i];
+      if(r.isFinal) finalTxt += r[0].transcript + " ";
+      else interino += r[0].transcript;
     }
-    if(fin.trim()){
-      const pos = ta.selectionStart;
-      // añade al final del texto ya escrito a mano o dictado
-      ta.value = (ta.value ? ta.value + " " : "") + fin.trim();
-      try{ ta.selectionStart = ta.selectionEnd = ta.value.length; }catch(e){}
+    if(finalTxt.trim()){
+      dictadoBase = (dictadoBase ? dictadoBase + " " : "") + finalTxt.trim();
+      $("r-texto").value = dictadoBase;
+    }
+    if(interino.trim()){
+      $("r-msg").textContent = "🎤 Escuchando… " + interino;
+    }else if(finalTxt.trim()){
+      $("r-msg").textContent = "🎤 Escuchando… (sigue hablando o pulsa «Parar dictado»)";
     }
   };
   rec.onerror = ev=>{
-    if(ev.error === "not-allowed" || ev.error === "service-not-allowed"){
-      $("r-msg").textContent = "Permiso de micrófono denegado. Actívalo en los ajustes del navegador: Configuración de sitios, Micrófono.";
+    const e = ev.error || "";
+    if(e === "not-allowed" || e === "service-not-allowed"){
       dictadoActivo = false;
-      $("btn-r-dictar").textContent = "🎤 Dictar";
+      pintarBotonDictado();
+      $("r-msg").textContent = "⚠ Micrófono bloqueado. Permite el micrófono para esta web en los ajustes de Chrome y vuelve a pulsar «Dictar».";
+      return;
     }
+    if(e === "no-speech" || e === "aborted") return;   // normal, se reintenta solo
+    if(e === "network"){
+      $("r-msg").textContent = "⚠ El dictado necesita conexión a internet. Revisa tu conexión.";
+      return;
+    }
+    $("r-msg").textContent = "⚠ No se pudo dictar (" + e + "). Puedes escribir con el teclado.";
   };
   rec.onend = ()=>{
-    // dictado continuo: si se para solo, se reinicia
-    if(dictadoActivo){ try{ rec.start(); }catch(e){} }
+    // Chrome corta el dictado cada pocos segundos: se vuelve a arrancar solo.
+    if(!dictadoActivo) return;
+    clearTimeout(dictadoReinicio);
+    dictadoReinicio = setTimeout(()=>{
+      if(!dictadoActivo || !dictadoRec) return;
+      try{ dictadoRec.start(); }catch(e){ /* ya estaba arrancado */ }
+    }, 350);
   };
   try{
     rec.start();
     dictadoActivo = true;
-    $("btn-r-dictar").textContent = "🎤 Dictando…";
-  }catch(e){}
+    pintarBotonDictado();
+    $("r-msg").textContent = "🎤 Escuchando… habla con normalidad.";
+  }catch(e){
+    dictadoActivo = false;
+    pintarBotonDictado();
+    $("r-msg").textContent = "⚠ No se pudo activar el micrófono. Pulsa «Dictar» otra vez.";
+  }
 }
 function pararDictadoComentario(){
   dictadoActivo = false;
+  clearTimeout(dictadoReinicio);
   if(dictadoRec){ try{ dictadoRec.stop(); }catch(e){} dictadoRec = null; }
-  $("btn-r-dictar").textContent = "🎤 Dictar";
+  pintarBotonDictado();
 }
 $("btn-r-dictar").onclick = ()=>{
   if(dictadoActivo) pararDictadoComentario();
@@ -2859,6 +2952,8 @@ function mostrarPregunta(){
     cancelarTimer(); E.tiempoRestante=0; $("q-timer").textContent="";
   }
 
+  ajustarAltoQuiz();
+
   if(autoleer){
     const sub = (SUBTEMAS[q.tema] && SUBTEMAS[q.tema][q.subtema]) || q.subtema || "";
     let ctx = "Pregunta "+(E.actual+1)+" de "+total+". "+TEMAS[q.tema]+". "+
@@ -2867,6 +2962,19 @@ function mostrarPregunta(){
     leerNuevo(ctx+" "+textoLeerPregunta(q, false), programarEscuchaAuto);
   }else{
     programarEscuchaAuto();
+  }
+}
+/* Si una pregunta muy larga no cabe en la pantalla, se reduce la letra
+   lo justo hasta que quepa. Así nunca hay que hacer scroll. */
+function ajustarAltoQuiz(){
+  const c = document.querySelector("#pantalla-quiz .cuerpo");
+  if(!c) return;
+  const raiz = document.documentElement;
+  raiz.style.setProperty("--escala", "1");
+  // medir y bajar de 4 en 4 % hasta que quepa (máximo 12 intentos)
+  for(let i = 0; i < 12; i++){
+    if(c.scrollHeight <= c.clientHeight + 1) break;
+    raiz.style.setProperty("--escala", String(1 - (i+1)*0.04));
   }
 }
 function bloquearOpciones(correcta, elegida){
@@ -2947,11 +3055,11 @@ function responder(idx){
   $("q-puntos").textContent = "Aciertos: "+E.aciertos;
   $("btn-siguiente").disabled = false;
   if(ok){
-    // Al acertar NO hay relámpago: solo se espera 1 s tras la lectura y se sigue.
+    // Al acertar NO hay relámpago: se esperan 2 s tras la lectura y se sigue.
     const idxRespondida = E.actual;
     const texto = "¡Correcto! "+q.explicacion;
     let disparado = false;
-    const seguir = ()=>{ if(disparado) return; disparado = true; esperarYAvanzar(idxRespondida, 1000); };
+    const seguir = ()=>{ if(disparado) return; disparado = true; esperarYAvanzar(idxRespondida, 2000); };
     if(vozauto){
       leerNuevo(texto, seguir);
       // Respaldo: si el navegador no avisa del final de la lectura, seguir igualmente.
