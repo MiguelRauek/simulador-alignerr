@@ -317,12 +317,12 @@
   #err-overlay{display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;
     background:#7f1d1d;color:#fff;padding:.5em .8em;font-size:.78rem;text-align:center;}
   #flash-aviso{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9997;}
-  #flash-aviso.on{animation:relampago .5s ease-out;}
+  #flash-aviso.on{animation:relampago .75s ease-out;}
   @keyframes relampago{
     0%{opacity:0;} 4%{opacity:.6;} 8%{opacity:.05;}
     50%{opacity:.5;} 62%{opacity:.06;} 82%{opacity:.3;} 100%{opacity:0;}
   }
-  body.fondo-aviso{animation:fondoAviso .5s ease-out;}
+  body.fondo-aviso{animation:fondoAviso .75s ease-out;}
   @keyframes fondoAviso{
     0%{filter:brightness(1);} 5%{filter:brightness(2.2);} 10%{filter:brightness(1.1);}
     55%{filter:brightness(1.8);} 100%{filter:brightness(1);}
@@ -757,7 +757,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43", info:"#2dd4bf"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.37";
+const VERSION = "2.38";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -3036,16 +3036,16 @@ function avisarApuro(sinTono){
   if(!sinTono) tocarTono([1100, 1500], 0.06, "sine");
 }
 
-/* Relámpago de aviso: se lanza al terminar la lectura y, 2 s después, se sigue. */
-function relampagoYAvanzar(idx, esperaAntes){
+/* Duración del relámpago (debe coincidir con la animación CSS). */
+const FLASH_MS = 750;
+/* Al responder, acierte o falle: cuando TERMINA de leerse la respuesta se espera
+   1 s, sale el relámpago y, al terminar el relámpago, 2 s más antes de pasar a
+   la siguiente pantalla. */
+function relampagoYAvanzar(idx){
   setTimeout(()=>{
     avisarApuro(true);
-    setTimeout(()=>avanzarSiSigue(idx), 2000);
-  }, (esperaAntes == null ? 0 : esperaAntes));
-}
-/* Sin relámpago: solo espera y sigue (al acertar) */
-function esperarYAvanzar(idx, ms){
-  setTimeout(()=>avanzarSiSigue(idx), (ms == null ? 1000 : ms));
+    setTimeout(()=>avanzarSiSigue(idx), FLASH_MS + 2000);
+  }, 1000);
 }
 function responder(idx){
   pararVoz();
@@ -3069,24 +3069,18 @@ function responder(idx){
   ultimaCorrecta = ok;
   $("q-puntos").textContent = "Aciertos: "+E.aciertos;
   $("btn-siguiente").disabled = false;
-  if(ok){
-    // Al acertar NO hay relámpago: se esperan 2 s tras la lectura y se sigue.
-    const idxRespondida = E.actual;
-    const texto = "¡Correcto! "+q.explicacion;
-    let disparado = false;
-    const seguir = ()=>{ if(disparado) return; disparado = true; esperarYAvanzar(idxRespondida, 2000); };
-    if(vozauto){
-      leerNuevo(texto, seguir);
-      // Respaldo: si el navegador no avisa del final de la lectura, seguir igualmente.
-      setTimeout(seguir, Math.max(2500, texto.length*80));
-    }else{
-      seguir();
-    }
+  // Acierte o falle, el ritmo es el mismo: al acabar de leer, 1 s, relámpago
+  // y, al terminar el relámpago, 2 s más y se sigue.
+  const idxRespondida = E.actual;
+  const texto = $("q-feedback").textContent;
+  let disparado = false;
+  const seguir = ()=>{ if(disparado) return; disparado = true; relampagoYAvanzar(idxRespondida); };
+  if(vozauto){
+    leerNuevo(texto, seguir);
+    // Respaldo: si el navegador no avisa del final de la lectura, seguir igualmente.
+    setTimeout(seguir, Math.max(2500, texto.length*80));
   }else{
-    // Al fallar: el relámpago sale cuando termina la lectura (sin tictac, porque
-    // ya suena el aviso de fallo). No avanza solo: se espera a pulsar "Siguiente".
-    if(vozauto) leerNuevo($("q-feedback").textContent, ()=>{ escucharComando(); avisarApuro(true); });
-    else avisarApuro(true);
+    seguir();
   }
 }
 function avanzarSiSigue(idx){
