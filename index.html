@@ -73,7 +73,7 @@
   /* ================= BOTONES: porcentaje del espacio libre ================= */
   button,.rect,.primario,.secundario,.peligro,.opcion,#btn-siguiente,
   #btn-leer,#btn-voz,#btn-desafio,#btn-reportar,#btn-saltar,#btn-tranquilo,
-  #btn-olvido,#btn-masinfo,#btn-repetir-exp,#btn-pausa{
+  #btn-olvido,#btn-masinfo,#btn-repetir-exp{
     font-family:inherit;
     font-size:clamp(.9rem, 3.5vw, 1.2rem);
     font-weight:700;
@@ -99,7 +99,7 @@
      Círculo: cantidades (5, 10, 15...).
      Etiqueta (esquina poco redondeada): marcas (Desafío, Olvido, Comentar...). */
   .primario,.secundario,.peligro,#btn-siguiente,
-  #btn-pausa,#btn-voz,#btn-leer,.lista-menu > button{
+  #btn-voz,#btn-leer,.lista-menu > button{
     border-radius:999px;}
   .primario{display:block;width:100%;background:var(--accent);color:#fff;border:none;}
   .primario:active{background:var(--accent2);}
@@ -185,13 +185,16 @@
   #q-timer{font-weight:700;font-size:.9rem;}
   .badge{font-size:.7rem;font-weight:700;padding:.1em .35em;border-radius:.4em;color:#0d0d14;}
   .cuerpo{flex:1;overflow-y:auto;width:100%;max-width:720px;margin:0 auto;padding:.5em .75em .6em;
-    display:flex;flex-direction:column;gap:.28em;min-height:0;}
+    display:flex;flex-direction:column;gap:.3em;min-height:0;justify-content:space-between;}
+  /* Marcos del examen: pregunta / controles / opciones+marcas / resto abajo */
+  .q-bloque{display:flex;flex-direction:column;gap:.3em;flex:0 0 auto;min-height:0;}
+  .q-bloque-opciones{gap:.3em;}
+  .q-bloque-abajo{gap:.28em;}
   /* La pregunta destaca: el doble de grande que el resto */
   #q-pregunta{font-size:1.9rem;font-weight:800;line-height:1.25;margin:0;}
   /* Barra de lectura pegada a la pregunta: Pausar · Voz · Leer */
   .barra-lectura{display:flex;gap:.35em;flex:0 0 auto;align-items:stretch;}
   .barra-lectura > button{flex:1 1 0;min-height:2.4em;font-size:.95em;padding:.5em .6em;}
-  .barra-lectura > #btn-pausa{flex:1.5 1 0;font-size:1.05em;}
   /* Opciones: separadas entre sí y con letra más grande */
   #q-opciones{display:flex;flex-direction:column;gap:.45em;flex:0 0 auto;}
   .opcion{display:block;width:100%;text-align:left;background:var(--card);color:var(--text);
@@ -269,11 +272,6 @@
   #btn-r-dictar.dictando{background:#f472b6;color:#0d0d14;border-color:#f472b6;
     animation:vozPulso 1s ease-in-out infinite;}
   #btn-r-dictar:disabled{opacity:.5;}
-  /* Pausa: en la barra de lectura, destacada */
-  #btn-pausa.btn-pausa-respuesta{display:block;background:rgba(251,191,36,.14);color:#fbbf24;
-    border:2px solid #fbbf24;margin:0;letter-spacing:.2px;}
-  #btn-pausa.btn-pausa-respuesta:disabled{opacity:.4;cursor:default;}
-  #btn-pausa.btn-pausa-respuesta.activo{background:rgba(251,191,36,.28);}
   #q-mas{font-size:.9rem;margin:0;white-space:pre-wrap;color:#34d399;
     background:rgba(52,211,153,.08);border-radius:var(--radio);padding:.4em .55em;}
   #q-web,.web-res{font-size:.88rem;margin:0;white-space:pre-wrap;color:#4a9eff;
@@ -552,36 +550,42 @@
     <span id="q-puntos"></span>
   </header>
   <div class="cuerpo">
-    <p id="q-pregunta"></p>
+    <!-- MARCO 1: la pregunta -->
+    <div class="q-bloque q-bloque-pregunta">
+      <p id="q-pregunta"></p>
+    </div>
 
-    <!-- Barra de lectura: pegada a la pregunta, siempre a la vista -->
+    <!-- MARCO 2: los dos controles (leer a la izquierda, responder por voz a la derecha) -->
     <div class="barra-lectura">
-      <button id="btn-pausa" class="btn-pausa-respuesta">⏸ Pausar</button>
-      <button id="btn-voz">🎤 Responder por voz</button>
       <button id="btn-leer">🔊 Leer pregunta</button>
+      <button id="btn-voz">🎤 Responder por voz</button>
     </div>
 
-    <div id="q-opciones"></div>
-
-    <div class="fila-marcas fila-desafio-olvido">
-      <button id="btn-desafio">⚔️ Desafío (5×)</button>
-      <button id="btn-olvido">🧠 Olvido</button>
+    <!-- MARCO 3: las cuatro opciones, con Desafío y Olvido pegados debajo -->
+    <div class="q-bloque q-bloque-opciones">
+      <div id="q-opciones"></div>
+      <div class="fila-marcas fila-desafio-olvido">
+        <button id="btn-desafio">⚔️ Desafío (5×)</button>
+        <button id="btn-olvido">🧠 Olvido</button>
+      </div>
     </div>
 
-    <div class="fila-marcas">
-      <button id="btn-reportar">💬 Comentar</button>
-      <button id="btn-saltar">⏭ Saltar</button>
-      <button id="btn-tranquilo">📖 Leer tranquilo</button>
+    <!-- MARCO 4: el resto, pegado al fondo de la pantalla -->
+    <div class="q-bloque q-bloque-abajo">
+      <p id="q-feedback"></p>
+      <div id="q-mas"></div>
+      <div class="fila-marcas">
+        <button id="btn-reportar">💬 Comentar</button>
+        <button id="btn-saltar">⏭ Saltar</button>
+        <button id="btn-tranquilo">📖 Leer tranquilo</button>
+      </div>
+      <div class="fila-marcas">
+        <button id="btn-masinfo">❓ Explicación</button>
+        <button id="btn-repetir-exp">🔁 Repetir explicación</button>
+      </div>
+      <div id="q-web" style="display:none"></div>
+      <button id="btn-siguiente" disabled>Siguiente →</button>
     </div>
-
-    <p id="q-feedback"></p>
-    <div id="q-mas"></div>
-    <div class="fila-marcas">
-      <button id="btn-masinfo">❓ Explicación</button>
-      <button id="btn-repetir-exp">🔁 Repetir explicación</button>
-    </div>
-    <div id="q-web" style="display:none"></div>
-    <button id="btn-siguiente" disabled>Siguiente →</button>
   </div>
 </section>
 
@@ -757,7 +761,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43", info:"#2dd4bf"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.38";
+const VERSION = "2.39";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -2520,12 +2524,6 @@ $("btn-tranquilo").onclick = ()=>{
   if(lbl){ lbl.textContent = "⏱ Tranquilo"; lbl.style.color = "#4a9eff"; }
   leerNuevo("Tiempo detenido en esta pregunta. Léela con calma y pulsa Siguiente cuando termines.");
 };
-$("btn-pausa").onclick = ()=>{
-  if(!("speechSynthesis" in window)) return;
-  if(vozPausada) reanudarVoz();
-  else if(vozEnCurso) pausarVoz();
-  actualizarPausa();
-};
 $("btn-masinfo").onclick = ()=>{
   const q = E.preguntas[E.actual];
   if(!q) return;
@@ -3023,6 +3021,31 @@ function tocarTono(frecs, dur, tipo){
 }
 function sonidoAcierto(){ tocarTono([880, 1318.5], 0.16, "sine"); }
 function sonidoFallo(){ tocarTono([220, 174.6], 0.22, "sawtooth"); }
+/* Trueno: retumbar grave que nace de golpe y se va apagando. Se genera aqui
+   mismo (ruido "marron" pasado por un filtro grave), sin archivos de sonido. */
+function sonidoTrueno(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state === "suspended") audioCtx.resume();
+    const dur = 1.4, sr = audioCtx.sampleRate, n = Math.floor(sr*dur);
+    const buf = audioCtx.createBuffer(1, n, sr);
+    const d = buf.getChannelData(0);
+    let last = 0;
+    for(let i=0;i<n;i++){
+      const blanco = Math.random()*2 - 1;
+      last = (last + 0.02*blanco) / 1.02;          // ruido marron: mas grave
+      const t = i/sr;
+      const env = Math.exp(-t*2.2) * (t < 0.03 ? t/0.03 : 1);
+      d[i] = Math.max(-1, Math.min(1, last*3.5*env));
+    }
+    const src = audioCtx.createBufferSource(); src.buffer = buf;
+    const lp = audioCtx.createBiquadFilter(); lp.type = "lowpass";
+    lp.frequency.value = 220; lp.Q.value = 0.7;
+    const g = audioCtx.createGain(); g.gain.value = 0.9;
+    src.connect(lp); lp.connect(g); g.connect(audioCtx.destination);
+    src.start();
+  }catch(e){}
+}
 
 // Aviso de "queda un segundo": un fogonazo tipo relámpago en la pantalla
 // (sube y baja la luz) más un tictac suave, para avisar de que va a cambiar.
@@ -3038,6 +3061,17 @@ function avisarApuro(sinTono){
 
 /* Duración del relámpago (debe coincidir con la animación CSS). */
 const FLASH_MS = 750;
+/* Festejo al terminar el examen: dos fogonazos seguidos (rayo) y, al acabar el
+   segundo, un trueno. Cuando el trueno termina, se llama a lo que toque (leer
+   el resultado). Asi la voz no se mezcla con el trueno. */
+function festejoFinal(alTerminar){
+  avisarApuro(true);                                   // fogonazo 1 (sin tono)
+  setTimeout(()=>avisarApuro(true), 1000);             // fogonazo 2 (sin tono)
+  setTimeout(()=>{
+    sonidoTrueno();
+    setTimeout(alTerminar, 1500);
+  }, 1000 + FLASH_MS);                                 // trueno al acabar el 2o
+}
 /* Al responder, acierte o falle: cuando TERMINA de leerse la respuesta se espera
    1 s, sale el relámpago y, al terminar el relámpago, 2 s más antes de pasar a
    la siguiente pantalla. */
@@ -3072,7 +3106,10 @@ function responder(idx){
   // Acierte o falle, el ritmo es el mismo: al acabar de leer, 1 s, relámpago
   // y, al terminar el relámpago, 2 s más y se sigue.
   const idxRespondida = E.actual;
-  const texto = $("q-feedback").textContent;
+  // Se lee también la respuesta que has elegido, antes del resultado.
+  const texto = "Has elegido: "+q.opciones[idx]+". "+
+    (ok ? "¡Correcto! " : "Incorrecto. La respuesta correcta es: "+q.opciones[correcta]+". ")+
+    q.explicacion;
   let disparado = false;
   const seguir = ()=>{ if(disparado) return; disparado = true; relampagoYAvanzar(idxRespondida); };
   if(vozauto){
@@ -3206,17 +3243,26 @@ function mostrarResultados(){
     rev.appendChild(div);
   });
   mostrar("pantalla-res");
-  // Excepción: aquí sí sale el relámpago (queda bien y avisa de que el examen ha terminado)
-  avisarApuro();
   const titulo = E.agotadoTotal ? "Tiempo agotado" : "Examen completado";
   const base = titulo+". Has acertado "+E.aciertos+" de "+total+". Porcentaje "+pct+" por ciento. "+msg;
   const nFalladas = E.respuestas.filter(r=>!r.ok).length;
-  if(vozauto && nFalladas > 0){
-    esperandoRepasoOferta = true;
-    leerNuevo(base+". Tienes "+nFalladas+" falladas. ¿Quieres repasarlas ahora? Di sí o no.", escucharResultados);
+  const leerResultado = ()=>{
+    if(vozauto && nFalladas > 0){
+      esperandoRepasoOferta = true;
+      leerNuevo(base+". Tienes "+nFalladas+" falladas. ¿Quieres repasarlas ahora? Di sí o no.", escucharResultados);
+    }else{
+      esperandoRepasoOferta = false;
+      leerNuevo(base, escucharResultados);
+    }
+  };
+  // Fin del examen: si se termina normalmente, dos relámpagos y un trueno de
+  // festejo; si se agota el tiempo, solo un fogonazo (terminar por tiempo no
+  // es motivo de celebración) y se lee el resultado enseguida.
+  if(E.agotadoTotal){
+    avisarApuro();
+    leerResultado();
   }else{
-    esperandoRepasoOferta = false;
-    leerNuevo(base, escucharResultados);
+    festejoFinal(leerResultado);
   }
 }
 
