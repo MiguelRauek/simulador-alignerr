@@ -142,8 +142,8 @@
   .caja-menu .card-menu > .fila,
   .caja-menu .card-menu > .num-presets,
   .caja-menu .card-menu > .num-fila{flex:1 1 auto;min-height:0;}
-  /* "Comenzar examen" es lo más grande del menú */
-  .caja-menu .card-menu > .primario{flex:2.4 1 auto;min-height:0;font-size:1.15em;}
+  /* "Comenzar examen": un poco menos alto, conservando el mismo sitio */
+  .caja-menu .card-menu > .primario{flex:1.9 1 auto;min-height:0;font-size:1.08em;}
   /* Tema y nivel: medianos */
   .caja-menu .card-menu > .fila-tema,
   .caja-menu .card-menu > .fila-nivel{flex:1.15 1 auto;}
@@ -761,7 +761,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43", info:"#2dd4bf"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.40";
+const VERSION = "2.41";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -1059,14 +1059,17 @@ function esVozMasculina(v){
 }
 function vozElegida(){
   try{
-    const n = localStorage.getItem(CLAVE_VOZ);
     const voces = speechSynthesis.getVoices();
+    const esEsp = v=>String(v.lang||"").toLowerCase().startsWith("es-es") || esVozEspana(v);
+    const esEspanol = v=>String(v.lang||"").toLowerCase().startsWith("es");
+    const n = localStorage.getItem(CLAVE_VOZ);
     if(n){
-      const v = voces.find(v=>v.name===n);
-      if(v) return v; // respetar CUALQUIER voz elegida (antes solo valía España)
+      const elegida = voces.find(v=>v.name===n);
+      // No usar una voz guardada en otro idioma (p. ej. catalán): el idioma
+      // español de la locución es más importante que la preferencia antigua.
+      if(elegida && esEspanol(elegida)) return elegida;
     }
-    return voces.find(esVozEspana) ||
-           voces.find(v=>v.lang && v.lang.toLowerCase().startsWith("es")) || null;
+    return voces.find(esEsp) || voces.find(esEspanol) || null;
   }catch(e){ return null; }
 }
 function aplicarVoz(u){
