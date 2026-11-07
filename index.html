@@ -616,7 +616,7 @@
     <div class="fila-botones">
       <button class="primario" id="btn-rep-enviar">📤 Enviar comentarios</button>
       <button class="secundario" id="btn-rep-exportar">📤 Exportar todo</button>
-      <button class="secundario" id="btn-rep-volver">← Volver</button>
+      <button class="secundario" id="btn-rep-volver">← Volver a resultados</button>
     </div>
   </div>
 </section>
@@ -654,7 +654,7 @@
       <button class="secundario" id="btn-rep-leer">🔊 Leer</button>
       <button class="secundario" id="btn-rep-desafio">⚔️ Añadir al Desafío</button>
       <button class="secundario" id="btn-rep-siguiente">Siguiente →</button>
-      <button class="secundario" id="btn-rep-volver">← Volver</button>
+      <button class="secundario" id="btn-reportes-volver">← Volver</button>
     </div>
   </div>
 </section>
@@ -761,7 +761,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43", info:"#2dd4bf"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.39";
+const VERSION = "2.40";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -1246,7 +1246,9 @@ async function explicarConGemini(q, zona, btn, variante){
   const key = geminiKey();
   if(!key){
     zona.classList.remove("globo-ia");
-    return buscarEnInternet(q.pregunta, zona, btn, q.subtema);
+    zona.style.display = "";
+    zona.textContent = "⚠ La clave de Gemini está vacía. Vuelve a guardarla en Ajustes para pedir más explicaciones.";
+    return;
   }
   zona.classList.add("globo-ia");
   zona.textContent = "🤖 Buscando la explicación...";
@@ -1513,7 +1515,7 @@ function actualizarBotonMasInfo(){
   const b = $("btn-masinfo");
   if(!b) return;
   // Si ya se ha pedido una explicación de esta pregunta, el botón ofrece otra.
-  b.textContent = E.masInfoN ? "❓ Más explicación" : "❓ Explicación";
+  b.textContent = E.masInfoN ? "❓ Otra explicación" : "❓ Más explicación";
   b.classList.remove("en-masinfo");
 }
 function mostrarMasInfoEnQuiz(q){
@@ -2167,8 +2169,7 @@ $("btn-leer").onclick = ()=>{
   if(!q) return;
   const total = E.preguntas.length;
   const sub = (SUBTEMAS[q.tema] && SUBTEMAS[q.tema][q.subtema]) || q.subtema || "";
-  let ctx = "Pregunta "+(E.actual+1)+" de "+total+". "+TEMAS[q.tema]+". "+
-            NIVELES[q.nivel]+". Aciertos: "+E.aciertos+".";
+  let ctx = "Pregunta "+(E.actual+1)+". "+TEMAS[q.tema]+". "+NIVELES[q.nivel]+".";
   if(sub) ctx += " "+sub+".";
   leer(ctx+" "+textoLeerPregunta(q, E.respondidas.has(E.actual)), $("btn-leer"), programarEscuchaAuto);
 };
@@ -2566,7 +2567,7 @@ $("btn-rep-volver").onclick = ()=>{ mostrar("pantalla-res"); };
 $("btn-reportar").onclick = ()=>{ abrirReporte(true); };
 $("btn-comentar-menu").onclick = ()=>{ abrirReporte(false); };
 $("btn-reportes-menu").onclick = ()=>{ mostrarReportes(); };
-$("btn-rep-volver").onclick = ()=>{ mostrar("pantalla-menu"); };
+$("btn-reportes-volver").onclick = ()=>{ mostrar("pantalla-menu"); };
 $("btn-rep-enviar").onclick = ()=>{
   if(reportes.length === 0){ leerNuevo("No hay comentarios que enviar."); return; }
   leerNuevo("Enviando comentarios al buzón privado del asistente...");
@@ -2969,8 +2970,7 @@ function mostrarPregunta(){
 
   if(autoleer){
     const sub = (SUBTEMAS[q.tema] && SUBTEMAS[q.tema][q.subtema]) || q.subtema || "";
-    let ctx = "Pregunta "+(E.actual+1)+" de "+total+". "+TEMAS[q.tema]+". "+
-              NIVELES[q.nivel]+". Aciertos: "+E.aciertos+".";
+    let ctx = "Pregunta "+(E.actual+1)+". "+TEMAS[q.tema]+". "+NIVELES[q.nivel]+".";
     if(sub) ctx += " "+sub+".";
     leerNuevo(ctx+" "+textoLeerPregunta(q, false), programarEscuchaAuto);
   }else{
@@ -3072,14 +3072,10 @@ function festejoFinal(alTerminar){
     setTimeout(alTerminar, 1500);
   }, 1000 + FLASH_MS);                                 // trueno al acabar el 2o
 }
-/* Al responder, acierte o falle: cuando TERMINA de leerse la respuesta se espera
-   1 s, sale el relámpago y, al terminar el relámpago, 2 s más antes de pasar a
-   la siguiente pantalla. */
+/* Durante las preguntas no hay relámpagos. Tras leer el resultado, se pasa
+   a la siguiente pregunta con una pausa breve. */
 function relampagoYAvanzar(idx){
-  setTimeout(()=>{
-    avisarApuro(true);
-    setTimeout(()=>avanzarSiSigue(idx), FLASH_MS + 2000);
-  }, 1000);
+  setTimeout(()=>avanzarSiSigue(idx), 1000);
 }
 function responder(idx){
   pararVoz();
@@ -3103,8 +3099,7 @@ function responder(idx){
   ultimaCorrecta = ok;
   $("q-puntos").textContent = "Aciertos: "+E.aciertos;
   $("btn-siguiente").disabled = false;
-  // Acierte o falle, el ritmo es el mismo: al acabar de leer, 1 s, relámpago
-  // y, al terminar el relámpago, 2 s más y se sigue.
+  // Acierte o falle, al acabar de leer hay una pausa breve; sin relámpago.
   const idxRespondida = E.actual;
   // Se lee también la respuesta que has elegido, antes del resultado.
   const texto = "Has elegido: "+q.opciones[idx]+". "+
@@ -3136,7 +3131,7 @@ function tiempoAgotado(){
   E.respondidas.add(E.actual);
   ultimaCorrecta = false;
   $("btn-siguiente").disabled = false;
-  // Al terminar de leer la respuesta: relámpago y 1 s después se sigue.
+  // Al terminar de leer la respuesta, se sigue sin relámpago.
   const idxAgotada = E.actual;
   if(vozauto){
     leerNuevo($("q-feedback").textContent, ()=>{ escucharComando(); relampagoYAvanzar(idxAgotada); });
@@ -3255,15 +3250,9 @@ function mostrarResultados(){
       leerNuevo(base, escucharResultados);
     }
   };
-  // Fin del examen: si se termina normalmente, dos relámpagos y un trueno de
-  // festejo; si se agota el tiempo, solo un fogonazo (terminar por tiempo no
-  // es motivo de celebración) y se lee el resultado enseguida.
-  if(E.agotadoTotal){
-    avisarApuro();
-    leerResultado();
-  }else{
-    festejoFinal(leerResultado);
-  }
+  // El festejo (dos relámpagos y después un trueno) solo ocurre al terminar
+  // todo el examen, tanto si se completa como si se agota el tiempo.
+  festejoFinal(leerResultado);
 }
 
 /* ========================== ESTADÍSTICAS ========================== */
