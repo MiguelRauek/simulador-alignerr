@@ -134,6 +134,15 @@
   /* Menú de Herramientas: los 6 botones se reparten TODO el alto disponible */
   .lista-menu > button{flex:1 1 auto;min-height:2.6em;font-size:1.15em;font-weight:700;}
   .lista-menu > button:active{opacity:.8;}
+  /* Botones «Volver a Herramientas»: altura normal y tamaño como los demás */
+  #pantalla-herr-voz .caja > .fila-botones,
+  #pantalla-herr-sync .caja > .fila-botones,
+  #pantalla-herr-copias .caja > .fila-botones,
+  #pantalla-herr-gemini .caja > .fila-botones,
+  #pantalla-herr-estudio .caja > .fila-botones,
+  #pantalla-herr-otros .caja > .fila-botones{flex:0 0 auto;justify-content:center;}
+  .caja .fila-botones > button.volver-herr{flex:0 0 auto;align-self:center;width:auto;min-height:2.2em;font-size:.9rem;padding:.5em .8em;}
+  .caja .fila-botones > button#btn-volver-herr{flex:0 0 auto;align-self:center;width:auto;min-height:2.2em;font-size:.9rem;padding:.5em .8em;}
   .card-menu .contador{font-size:.68rem;line-height:1.25;margin-top:.25em;color:var(--sub);}
   .card-menu #contador-disp{margin:.15em 0 0;font-size:.72rem;flex:0 0 auto;}
   /* Cada fila del menú se reparte EL ALTO QUE SOBRE en partes iguales
@@ -142,8 +151,8 @@
   .caja-menu .card-menu > .fila,
   .caja-menu .card-menu > .num-presets,
   .caja-menu .card-menu > .num-fila{flex:1 1 auto;min-height:0;}
-  /* "Comenzar examen": un poco menos alto, conservando el mismo sitio */
-  .caja-menu .card-menu > .primario{flex:1.9 1 auto;min-height:0;font-size:1.08em;}
+  /* "Comenzar examen": tamaño natural, sin estirarse con el espacio libre */
+  .caja-menu .card-menu > .primario{flex:0 0 auto;height:2em;min-height:2em;font-size:.98em;padding:.3em .7em;}
   /* Tema y nivel: medianos */
   .caja-menu .card-menu > .fila-tema,
   .caja-menu .card-menu > .fila-nivel{flex:1.15 1 auto;}
@@ -315,12 +324,12 @@
   #err-overlay{display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;
     background:#7f1d1d;color:#fff;padding:.5em .8em;font-size:.78rem;text-align:center;}
   #flash-aviso{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9997;}
-  #flash-aviso.on{animation:relampago .75s ease-out;}
+  #flash-aviso.on{animation:relampago var(--flash-duracion,.75s) ease-out;}
   @keyframes relampago{
     0%{opacity:0;} 4%{opacity:.6;} 8%{opacity:.05;}
     50%{opacity:.5;} 62%{opacity:.06;} 82%{opacity:.3;} 100%{opacity:0;}
   }
-  body.fondo-aviso{animation:fondoAviso .75s ease-out;}
+  body.fondo-aviso{animation:fondoAviso var(--flash-duracion,.75s) ease-out;}
   @keyframes fondoAviso{
     0%{filter:brightness(1);} 5%{filter:brightness(2.2);} 10%{filter:brightness(1.1);}
     55%{filter:brightness(1.8);} 100%{filter:brightness(1);}
@@ -580,7 +589,7 @@
         <button id="btn-tranquilo">📖 Leer tranquilo</button>
       </div>
       <div class="fila-marcas">
-        <button id="btn-masinfo">❓ Explicación</button>
+        <button id="btn-masinfo">Explicación</button>
         <button id="btn-repetir-exp">🔁 Repetir explicación</button>
       </div>
       <div id="q-web" style="display:none"></div>
@@ -761,7 +770,7 @@ const NIVELES = {1:"Medio", 2:"Difícil", 3:"Muy difícil"};
 const COLOR_TEMA = {mat:"#4a9eff", prog:"#ff9f43", info:"#2dd4bf"};
 const COLOR_NIVEL = {1:"#22d3ee", 2:"#a78bfa", 3:"#f472b6"};
 const OK="#3ddc84", BAD="#ff5c5c", AMBAR="#ffb020";
-const VERSION = "2.41";
+const VERSION = "2.42";
 const CLAVE = "alignerr-simulador-estadisticas-v1";
 
 /* ======================= ESTADÍSTICAS (localStorage) ======================= */
@@ -1060,16 +1069,13 @@ function esVozMasculina(v){
 function vozElegida(){
   try{
     const voces = speechSynthesis.getVoices();
-    const esEsp = v=>String(v.lang||"").toLowerCase().startsWith("es-es") || esVozEspana(v);
-    const esEspanol = v=>String(v.lang||"").toLowerCase().startsWith("es");
     const n = localStorage.getItem(CLAVE_VOZ);
     if(n){
       const elegida = voces.find(v=>v.name===n);
-      // No usar una voz guardada en otro idioma (p. ej. catalán): el idioma
-      // español de la locución es más importante que la preferencia antigua.
-      if(elegida && esEspanol(elegida)) return elegida;
+      if(elegida) return elegida;
     }
-    return voces.find(esEsp) || voces.find(esEspanol) || null;
+    return voces.find(esVozEspana) ||
+           voces.find(v=>v.lang && v.lang.toLowerCase().startsWith("es")) || null;
   }catch(e){ return null; }
 }
 function aplicarVoz(u){
@@ -1113,8 +1119,8 @@ function hablar(texto, alTerminar, btn){
   u.onstart = ()=>{ if(btn) btn.textContent = "🔇 Parar"; actualizarPausa(); pedirWakeLock(); };
   u.onboundary = (e)=>{ if(e && typeof e.charIndex === "number") vozPos = e.charIndex; };
   u.onend = u.onerror = ()=>{
-    if(token !== vozToken) return;   // ya hay otra lectura en marcha
-    if(vozPausada) return;           // está en pausa: no ha terminado
+    if(token !== vozToken) return;
+    if(vozPausada) return;
     vozEnCurso = false;
     if(btn) btn.textContent = "🔊 Leer";
     actualizarPausa();
@@ -1137,7 +1143,10 @@ function leer(texto, btn, alTerminar){
   hablar(texto, alTerminar, btn);
 }
 function leerNuevo(texto, alTerminar){
-  if(!("speechSynthesis" in window)) return;
+  if(!("speechSynthesis" in window)){
+    if(alTerminar) alTerminar();
+    return;
+  }
   hablar(texto, alTerminar);
 }
 function pausarVoz(){
@@ -1518,7 +1527,7 @@ function actualizarBotonMasInfo(){
   const b = $("btn-masinfo");
   if(!b) return;
   // Si ya se ha pedido una explicación de esta pregunta, el botón ofrece otra.
-  b.textContent = E.masInfoN ? "❓ Otra explicación" : "❓ Más explicación";
+  b.textContent = E.masInfoN ? "Otra explicación" : "Explicación";
   b.classList.remove("en-masinfo");
 }
 function mostrarMasInfoEnQuiz(q){
@@ -2533,7 +2542,7 @@ $("btn-masinfo").onclick = ()=>{
   if(!q) return;
   // cada pulsación pide una explicación distinta a Gemini
   E.masInfoN = (E.masInfoN || 0) + 1;
-  $("btn-masinfo").textContent = "❓ Más explicación";
+  $("btn-masinfo").textContent = "Otra explicación";
   explicarConGemini(q, $("q-web"), $("btn-masinfo"), E.masInfoN);
 };
 $("btn-repetir-exp").onclick = ()=>{
@@ -3043,8 +3052,8 @@ function sonidoTrueno(){
     }
     const src = audioCtx.createBufferSource(); src.buffer = buf;
     const lp = audioCtx.createBiquadFilter(); lp.type = "lowpass";
-    lp.frequency.value = 220; lp.Q.value = 0.7;
-    const g = audioCtx.createGain(); g.gain.value = 0.9;
+    lp.frequency.value = 320; lp.Q.value = 0.7;
+    const g = audioCtx.createGain(); g.gain.value = 1.5;
     src.connect(lp); lp.connect(g); g.connect(audioCtx.destination);
     src.start();
   }catch(e){}
@@ -3053,9 +3062,11 @@ function sonidoTrueno(){
 // Aviso de "queda un segundo": un fogonazo tipo relámpago en la pantalla
 // (sube y baja la luz) más un tictac suave, para avisar de que va a cambiar.
 // sinTono = true cuando ya suena otro aviso (p. ej. al fallar).
-function avisarApuro(sinTono){
+function avisarApuro(sinTono, duracion){
+  const ms = duracion || FLASH_MS;
   const el = $("flash-aviso");
-  if(el){ el.classList.remove("on"); void el.offsetWidth; el.classList.add("on"); }
+  if(el){ el.style.animationDuration = ms+"ms"; el.classList.remove("on"); void el.offsetWidth; el.classList.add("on"); }
+  document.documentElement.style.setProperty("--flash-duracion", ms+"ms");
   document.body.classList.remove("fondo-aviso");
   void document.body.offsetWidth;
   document.body.classList.add("fondo-aviso");
@@ -3068,12 +3079,9 @@ const FLASH_MS = 750;
    segundo, un trueno. Cuando el trueno termina, se llama a lo que toque (leer
    el resultado). Asi la voz no se mezcla con el trueno. */
 function festejoFinal(alTerminar){
-  avisarApuro(true);                                   // fogonazo 1 (sin tono)
-  setTimeout(()=>avisarApuro(true), 1000);             // fogonazo 2 (sin tono)
-  setTimeout(()=>{
-    sonidoTrueno();
-    setTimeout(alTerminar, 1500);
-  }, 1000 + FLASH_MS);                                 // trueno al acabar el 2o
+  avisarApuro(true, 350);                              // primer fogonazo más corto
+  setTimeout(()=>avisarApuro(true, 500), 1000);        // segundo, también algo más corto
+  setTimeout(alTerminar, 1000 + FLASH_MS);             // iniciar lectura después de ambos
 }
 /* Durante las preguntas no hay relámpagos. Tras leer el resultado, se pasa
    a la siguiente pregunta con una pausa breve. */
@@ -3244,17 +3252,25 @@ function mostrarResultados(){
   const titulo = E.agotadoTotal ? "Tiempo agotado" : "Examen completado";
   const base = titulo+". Has acertado "+E.aciertos+" de "+total+". Porcentaje "+pct+" por ciento. "+msg;
   const nFalladas = E.respuestas.filter(r=>!r.ok).length;
+  const alTerminarLaVoz = ()=>{
+    sonidoTrueno();
+    if(vozauto && nFalladas > 0){
+      esperandoRepasoOferta = true;
+      escucharResultados();
+    }else{
+      esperandoRepasoOferta = false;
+    }
+  };
   const leerResultado = ()=>{
     if(vozauto && nFalladas > 0){
       esperandoRepasoOferta = true;
-      leerNuevo(base+". Tienes "+nFalladas+" falladas. ¿Quieres repasarlas ahora? Di sí o no.", escucharResultados);
+      leerNuevo(base+". Tienes "+nFalladas+" falladas. ¿Quieres repasarlas ahora? Di sí o no.", alTerminarLaVoz);
     }else{
       esperandoRepasoOferta = false;
-      leerNuevo(base, escucharResultados);
+      leerNuevo(base, alTerminarLaVoz);
     }
   };
-  // El festejo (dos relámpagos y después un trueno) solo ocurre al terminar
-  // todo el examen, tanto si se completa como si se agota el tiempo.
+  // Destellos al final; resultados por voz; el trueno suena al terminar la voz.
   festejoFinal(leerResultado);
 }
 
